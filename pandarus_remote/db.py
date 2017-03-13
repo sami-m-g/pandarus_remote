@@ -52,7 +52,6 @@ class RasterStats(Model):
 
 class Remaining(Model):
     intersection = ForeignKeyField(Intersection, related_name='intersection_fk')
-    source = ForeignKeyField(File, related_name='source_fk')
     data_fp = TextField()
 
     class Meta:

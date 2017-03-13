@@ -54,12 +54,16 @@ def catalog():
     return json_response({
         'files': [(obj.name, obj.sha256) for obj in File.select()],
         'intersections': [
-            (obj.first.name, obj.second.name, os.path.basename(obj.output_fp))
+            (obj.first.sha256, obj.second.sha256)
             for obj in Intersection.select()
         ],
-        'areas': [
-            (obj.reference.name, os.path.basename(obj.output_fp))
-            for obj in Area.select()
+        'remaining': [
+            (vector.sha256, raster.sha256)
+            for obj in RasterStats.select()
+        ],
+        'rasterstats': [
+            (vector.sha256, raster.sha256)
+            for obj in RasterStats.select()
         ],
     })
 
@@ -235,15 +239,12 @@ def calculate_remaining():
         abort(404, "Intersection not calculated")
 
     # Make sure Remaining doesn't exist
-    if Remaining.select().where(
-            Remaining.intersection == intersection & \
-            Remaining.source == source).count():
+    if Remaining.select().where(Remaining.intersection == intersection).count():
         abort(409, "This remaining calculation result already exists")
 
     job = redis_queue.enqueue(
         remaining_task,
         intersection.id,
-        source.id,
         os.path.join(data_dir, "remaining"),
         timeout=60 * 30
     )

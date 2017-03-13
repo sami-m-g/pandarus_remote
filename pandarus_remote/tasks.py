@@ -72,14 +72,12 @@ def rasterstats_task(vector_id, raster_id, band, output_fp):
     ).save()
 
 
-def remaining_task(intersection_id, file_id, output):
+def remaining_task(intersection_id, output):
     intersection = Intersection.get(Intersection.id == intersection_id)
-    source = File.get(File.id == file_id)
+    source = intersection.first
 
     # Job enqueued twice
-    if Remaining.select().where(
-            Remaining.intersection == intersection & \
-            Remaining.source == source).count():
+    if Remaining.select().where(Remaining.intersection == intersection).count():
         return
 
     data_fp = calculate_remaining(
@@ -89,13 +87,10 @@ def remaining_task(intersection_id, file_id, output):
         dirpath=output
     )
 
-    if Remaining.select().where(
-            Remaining.intersection == intersection & \
-            Remaining.source == source).count():
+    if Remaining.select().where(Remaining.intersection == intersection).count():
         return
 
     Remaining(
         intersection=intersection,
-        source=source,
         data_fp=data_fp
     ).save()
