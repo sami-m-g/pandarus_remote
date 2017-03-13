@@ -14,12 +14,17 @@ from flask import (
     send_file,
     url_for,
 )
+from peewee import DoesNotExist
 from werkzeug import secure_filename
 import hashlib
 import json
 import os
 import uuid
-from .tasks import intersect, area
+from .tasks import (
+    intersect_task,
+    rasterstats_task,
+    remaining_task,
+)
 from . import redis_queue
 from . import __version__ as version
 
@@ -59,8 +64,7 @@ def catalog():
     })
 
 
-@pr_app.route('/intersection', methods=['POST'])
-def get_intersection():
+def get_intersection(vector=False):
     first = request.form['first']
     second = request.form['second']
 
@@ -80,18 +84,33 @@ def get_intersection():
 
     try:
         obj = Intersection.get(
-            Intersection.first << (first, second) & \
-            Intersection.second << (first, second)
+            Intersection.first == first & \
+            Intersection.second == second
         )
     except:
         abort(404, "Can't find intersection")
 
+    if vector:
+        fp = obj.vector_fp
+    else:
+        fp = obj.data_fp
+
     return send_file(
-        obj.output_fp,
+        fp,
         mimetype='application/octet-stream',
         as_attachment=True,
-        attachment_filename=os.path.basename(obj.output_fp)
+        attachment_filename=os.path.basename(fp)
     )
+
+
+@pr_app.route('/intersection/vector', methods=['POST'])
+def get_vector_intersection():
+    return _get_intersection(vector=True)
+
+
+@pr_app.route('/intersection', methods=['POST'])
+def get_vector():
+    return _get_intersection()
 
 
 @pr_app.route('/upload', methods=['POST'])
@@ -166,30 +185,67 @@ def calculate_intersection():
     except:
         abort(404, "Can't find second file in database")
 
+    # Make sure correct types
+
     # Make sure Intersection doesn't exist
     if Intersection.select().where(
-            Intersection.first << (first, second) & \
-            Intersection.second << (second, first)).count():
+            Intersection.first == first & \
+            Intersection.second == second).count():
         abort(409, "This intersection already exists")
 
-    def get_meta(obj):
-        if obj.kind == 'vector':
-            return {'layer': obj.layer, 'field': obj.field}
-        else:
-            return {'band': obj.band}
-
-    output_filename = uuid.uuid4().hex
-    output_fp = os.path.join(data_dir, "intersections", output_filename)
     job = redis_queue.enqueue(
-        intersect,
-        first.filepath,
-        first_h,
-        get_meta(first),
-        second.filepath,
-        second_h,
-        get_meta(second),
-        output_fp,
+        intersect_task,
+        first.id,
+        second.id,
+        os.path.join(data_dir, "intersections"),
         timeout=60 * 60 * 4
+    )
+
+    return url_for("status", job_id=job.id)
+
+
+@pr_app.route('/calculate-remaining', methods=['POST'])
+def calculate_remaining():
+    first_h = request.form['first']
+    second_h = request.form['second']
+
+    # Make sure the hashes aren't the same
+    if first_h == second_h:
+        abort(406, "Identical file hashes")
+
+    # Make sure Files exist
+    try:
+        first = File.get(File.sha256 == first_h)
+    except:
+        abort(404, "Can't find first file in database")
+    try:
+        second = File.get(File.sha256 == second_h)
+    except:
+        abort(404, "Can't find second file in database")
+
+    if first.kind != 'vector' or second.kind != 'vector':
+        abort(406, "Not vector file(s)")
+
+    try:
+        intersection = Intersection.get(
+            Intersection.first == first,
+            Intersection.second == second
+        )
+    except DoesNotExist:
+        abort(404, "Intersection not calculated")
+
+    # Make sure Remaining doesn't exist
+    if Remaining.select().where(
+            Remaining.intersection == intersection & \
+            Remaining.source == source).count():
+        abort(409, "This remaining calculation result already exists")
+
+    job = redis_queue.enqueue(
+        remaining_task,
+        intersection.id,
+        source.id,
+        os.path.join(data_dir, "remaining"),
+        timeout=60 * 30
     )
 
     return url_for("status", job_id=job.id)

@@ -1,38 +1,101 @@
 # -*- coding: utf-8 -*-
-from .db import Intersection, File
-from pandarus import Pandarus
+from .db import Intersection, File, RasterStats, Remaining
+from pandarus import (
+    intersect,
+    raster_statistics,
+    calculate_remaining,
+)
 import os
 
 
-def intersect(fp1, hash1, meta1, fp2, hash2, meta2, output_fp):
+def intersect_task(id1, id2, output):
     try:
         cpus = int(os.environ['PANDARUS_CPUS'])
         assert cpus
     except:
         cpus = None
 
-    pan = Pandarus(
-        from_filepath=fp1,
-        from_metadata=meta1,
-        to_filepath=fp2,
-        to_metadata=meta2,
-    )
-    pan.match(cpus=cpus)
-    pan.add_to_map_fieldname()
-    pan.add_from_map_fieldname()
-    output_fp = pan.export(output_fp)
-
-    first = File.get(File.sha256 == hash1)
-    second = File.get(File.sha256 == hash2)
+    first = File.get(File.id == id1)
+    second = File.get(File.id == id2)
 
     # Job enqueued twice
     if Intersection.select().where(
-            Intersection.first << (first, second) & \
-            Intersection.second << (second, first)).count():
+            Intersection.first == first & \
+            Intersection.second == second).count():
+        return
+
+    vector, data = intersect(
+        first.filepath,
+        first.field,
+        second.filepath,
+        second.field,
+        dirpath = output,
+        cpus=cpus,
+        driver='GPKG'
+    )
+
+    if Intersection.select().where(
+            Intersection.first == first & \
+            Intersection.second == second).count():
         return
 
     Intersection(
         first=first,
         second=second,
-        output_fp=output_fp
+        data_fp=data,
+        vector_fp=vector,
+    ).save()
+
+
+def rasterstats_task(vector_id, raster_id, band, output_fp):
+    vector = File.get(File.id == vector_id)
+    raster = File.get(File.id == raster_id)
+
+    # Job enqueued twice
+    if RasterStats.select().where(
+            RasterStats.vector == vector & \
+            RasterStats.raster == raster).count():
+        return
+
+    raster_statistics(vector.filepath, vector.field, raster.filepath, output=output_fp, band=band)
+
+    # Job enqueued twice
+    if RasterStats.select().where(
+            RasterStats.vector == vector & \
+            RasterStats.raster == raster).count():
+        return
+
+    RasterStats(
+        vector=vector,
+        raster=raster,
+        output=output_fp
+    ).save()
+
+
+def remaining_task(intersection_id, file_id, output):
+    intersection = Intersection.get(Intersection.id == intersection_id)
+    source = File.get(File.id == file_id)
+
+    # Job enqueued twice
+    if Remaining.select().where(
+            Remaining.intersection == intersection & \
+            Remaining.source == source).count():
+        return
+
+    data_fp = calculate_remaining(
+        source.filepath,
+        source.field,
+        intersection.vector_fp,
+        dirpath=output
+    )
+
+    if Remaining.select().where(
+            Remaining.intersection == intersection & \
+            Remaining.source == source).count():
+        return
+
+    Remaining(
+        intersection=intersection,
+        source=source,
+        data_fp=data_fp
     ).save()

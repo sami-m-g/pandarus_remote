@@ -34,10 +34,29 @@ class File(Model):
 class Intersection(Model):
     first = ForeignKeyField(File, related_name='first_fk')
     second = ForeignKeyField(File, related_name='second_fk')
-    output_fp = TextField()
+    data_fp = TextField()
+    vector_fp = TextField()
 
     class Meta:
         database = database
 
 
-database.create_tables([File, Intersection], safe=True)
+class RasterStats(Model):
+    vector = ForeignKeyField(File, related_name='vector_fk')
+    raster = ForeignKeyField(File, related_name='raster_fk')
+    otuput = TextField()
+
+    class Meta:
+        database = database
+
+
+class Remaining(Model):
+    intersection = ForeignKeyField(Intersection, related_name='intersection_fk')
+    source = ForeignKeyField(File, related_name='source_fk')
+    data_fp = TextField()
+
+    class Meta:
+        database = database
+
+
+database.create_tables([File, Intersection, Remaining, RasterStats], safe=True)
