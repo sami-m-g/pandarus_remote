@@ -19,3 +19,5 @@ Icon*
 .cache
 *.log
 __pycache__
+*.conf
+euler-install.txt
