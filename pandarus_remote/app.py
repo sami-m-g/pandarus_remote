@@ -4,9 +4,11 @@ from .db import (
     database,
     File,
     Intersection,
+    RasterStats,
+    Remaining,
 )
 from .filesystem import data_dir
-from .utils import sha256, is_valid_spatial_dataset
+from .utils import sha256, check_type
 from flask import (
     abort,
     request,
@@ -16,6 +18,7 @@ from flask import (
 )
 from peewee import DoesNotExist
 from werkzeug import secure_filename
+import fiona
 import hashlib
 import json
 import os
@@ -52,52 +55,86 @@ def status(job_id):
 @pr_app.route('/catalog')
 def catalog():
     return json_response({
-        'files': [(obj.name, obj.sha256) for obj in File.select()],
+        'files': [(obj.name, obj.sha256, obj.kind) for obj in File.select()],
         'intersections': [
             (obj.first.sha256, obj.second.sha256)
             for obj in Intersection.select()
         ],
         'remaining': [
-            (vector.sha256, raster.sha256)
-            for obj in RasterStats.select()
+            (obj.intersection.first.sha256, obj.intersection.second.sha256)
+            for obj in Remaining.select()
         ],
         'rasterstats': [
-            (vector.sha256, raster.sha256)
+            (obj.vector.sha256, obj.raster.sha256)
             for obj in RasterStats.select()
         ],
     })
 
 
-def get_intersection(vector=False):
+@pr_app.route('/rasterstats', methods=['POST'])
+def get_rasterstats():
+    vector = request.form['vector']
+    raster = request.form['raster']
+
+    try:
+        vector = File.get(File.sha256 == vector)
+        raster = File.get(File.sha256 == raster)
+        rs = RasterStats.get(
+            (RasterStats.vector == vector) &
+            (RasterStats.raster == raster)
+        )
+    except DoesNotExist:
+        abort(404, "Can't find raster stats result")
+
+    return send_file(
+        rs.output,
+        mimetype='application/octet-stream',
+        as_attachment=True,
+        attachment_filename=os.path.basename(rs.output)
+    )
+
+
+@pr_app.route('/remaining', methods=['POST'])
+def get_remaining():
     first = request.form['first']
     second = request.form['second']
 
-    # Make sure the hashes aren't the same
-    if first == second:
-        abort(406, "Identical file hashes")
-
-    # Make sure Files exist
     try:
         first = File.get(File.sha256 == first)
-    except:
-        abort(404, "Can't find first file in database")
-    try:
         second = File.get(File.sha256 == second)
-    except:
-        abort(404, "Can't find second file in database")
+        intersection = Intersection.get(
+            (Intersection.first == first) &
+            (Intersection.second == second)
+        )
+        remaining = Remaining.get(
+            Remaining.intersection == intersection
+        )
+    except DoesNotExist:
+        abort(404, "Can't find remaining result")
+
+    return send_file(
+        remaining.data_fp,
+        mimetype='application/octet-stream',
+        as_attachment=True,
+        attachment_filename=os.path.basename(remaining.data_fp)
+    )
+
+
+def _get_intersection(vector=False):
+    first = request.form['first']
+    second = request.form['second']
 
     try:
+        first = File.get(File.sha256 == first)
+        second = File.get(File.sha256 == second)
         obj = Intersection.get(
-            Intersection.first == first & \
-            Intersection.second == second
+            (Intersection.first == first) &
+            (Intersection.second == second)
         )
     except:
         abort(404, "Can't find intersection")
 
-    if vector:
-        fp = obj.vector_fp
-    else:
-        fp = obj.data_fp
+    fp = obj.vector_fp if vector else obj.data_fp
 
     return send_file(
         fp,
@@ -107,7 +144,7 @@ def get_intersection(vector=False):
     )
 
 
-@pr_app.route('/intersection/vector', methods=['POST'])
+@pr_app.route('/intersection-file', methods=['POST'])
 def get_vector_intersection():
     return _get_intersection(vector=True)
 
@@ -119,10 +156,10 @@ def get_vector():
 
 @pr_app.route('/upload', methods=['POST'])
 def upload():
+    print("Starting upload:", request.form)
     their_hash = request.form['sha256']
     filename = secure_filename(request.form['name'])
     file_obj = request.files['file']
-    kind = request.form['kind']
     new_name = uuid.uuid4().hex + "." + filename
     filepath = os.path.join(
         data_dir,
@@ -130,37 +167,41 @@ def upload():
         new_name
     )
 
+    file_obj.save(filepath)
+
+    our_hash = sha256(filepath)
+    kind = check_type(filepath)
+
     if kind == 'vector':
         layer, band, field = request.form['layer'] or None, None, request.form['field']
+        with fiona.open(filepath) as src:
+            geom_type = src.meta['schema']['geometry']
     elif kind == 'raster':
-        layer, band, field = None, request.form['band'] or None, None
+        layer, band, field, geom_type = None, request.form['band'] or None, None, None
     else:
-        # Invalid `kind` field
-        abort(406, "Invalid 'kind' value")
-
-    # File can't exist
-    if os.path.isfile(filepath):
-        abort(409, "This file already exists")
-    file_obj.save(filepath)
-    our_hash = sha256(filepath)
+        os.remove(filepath)
+        abort(409, "Invalid spatial dataset")
 
     # Provided hash is incorrect
     if our_hash != their_hash:
         os.remove(filepath)
         abort(406, "Can't reproduce provided hash value")
 
-    # Make sure valid spatial dataset
-    if not is_valid_spatial_dataset(filepath):
-        os.remove(filepath)
-        abort(406, "Not a valid vector or raster file")
-
     # Hash already exists
     if File.select().where(File.sha256 == our_hash).count():
         os.remove(filepath)
         abort(409, "This file hash is already uploaded")
 
-    File(filepath=filepath, name=new_name, sha256=our_hash, kind=kind,
-         layer=layer, band=band, field=field).save()
+    File(
+        band=band,
+        field=field,
+        filepath=filepath,
+        geometry_type=geom_type,
+        kind=kind,
+        layer=layer,
+        name=new_name,
+        sha256=our_hash,
+    ).save()
 
     return json_response(
         {
@@ -175,26 +216,28 @@ def calculate_intersection():
     first_h = request.form['first']
     second_h = request.form['second']
 
+    try:
+        first = File.get(File.sha256 == first_h)
+        second = File.get(File.sha256 == second_h)
+    except DoesNotExist:
+        abort(404, "File not found")
+
     # Make sure the hashes aren't the same
     if first_h == second_h:
         abort(406, "Identical file hashes")
 
-    # Make sure Files exist
-    try:
-        first = File.get(File.sha256 == first_h)
-    except:
-        abort(404, "Can't find first file in database")
-    try:
-        second = File.get(File.sha256 == second_h)
-    except:
-        abort(404, "Can't find second file in database")
+    # Correct file types
+    if not first.kind == 'vector' and second.kind == 'vector':
+        abort(409, "Both files must be vector datasets")
 
     # Make sure correct types
+    if not second.geometry_type in ("Polygon", "MultiPolygon"):
+        abort(409, "Invalid geometry type for intersection")
 
     # Make sure Intersection doesn't exist
     if Intersection.select().where(
-            Intersection.first == first & \
-            Intersection.second == second).count():
+            (Intersection.first == first) &
+            (Intersection.second == second)).count():
         abort(409, "This intersection already exists")
 
     job = redis_queue.enqueue(
@@ -213,24 +256,9 @@ def calculate_remaining():
     first_h = request.form['first']
     second_h = request.form['second']
 
-    # Make sure the hashes aren't the same
-    if first_h == second_h:
-        abort(406, "Identical file hashes")
-
-    # Make sure Files exist
     try:
         first = File.get(File.sha256 == first_h)
-    except:
-        abort(404, "Can't find first file in database")
-    try:
         second = File.get(File.sha256 == second_h)
-    except:
-        abort(404, "Can't find second file in database")
-
-    if first.kind != 'vector' or second.kind != 'vector':
-        abort(406, "Not vector file(s)")
-
-    try:
         intersection = Intersection.get(
             Intersection.first == first,
             Intersection.second == second
@@ -246,6 +274,39 @@ def calculate_remaining():
         remaining_task,
         intersection.id,
         os.path.join(data_dir, "remaining"),
+        timeout=60 * 30
+    )
+
+    return url_for("status", job_id=job.id)
+
+
+@pr_app.route('/calculate-rasterstats', methods=['POST'])
+def calculate_rasterstats():
+    vector_h = request.form['vector']
+    raster_h = request.form['raster']
+
+    try:
+        vector = File.get(File.sha256 == vector_h)
+        raster = File.get(File.sha256 == raster_h)
+    except DoesNotExist:
+        abort(404, "File not found")
+
+    if not vector.kind == 'vector' and raster.kind == 'raster':
+        abort(406, "Invalid data file types")
+
+    # Make sure doesn't already exist
+    if RasterStats.select().where(
+        (RasterStats.vector == vector) &
+        (RasterStats.raster == raster)
+    ).count():
+        abort(409, "This raster calculation result already exists")
+
+    job = redis_queue.enqueue(
+        rasterstats_task,
+        vector.id,
+        raster.id,
+        raster.band,
+        os.path.join(data_dir, "remaining", uuid.uuid4().hex + '.json'),
         timeout=60 * 30
     )
 

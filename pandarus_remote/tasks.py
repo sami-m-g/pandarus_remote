@@ -7,6 +7,7 @@ from pandarus import (
 )
 import os
 
+import sys, traceback
 
 def intersect_task(id1, id2, output):
     try:
@@ -31,7 +32,7 @@ def intersect_task(id1, id2, output):
         second.field,
         dirpath = output,
         cpus=cpus,
-        driver='GPKG'
+        driver='GeoJSON'
     )
 
     if Intersection.select().where(
@@ -57,7 +58,7 @@ def rasterstats_task(vector_id, raster_id, band, output_fp):
             RasterStats.raster == raster).count():
         return
 
-    raster_statistics(vector.filepath, vector.field, raster.filepath, output=output_fp, band=band)
+    output = raster_statistics(vector.filepath, vector.field, raster.filepath, output=output_fp, band=band)
 
     # Job enqueued twice
     if RasterStats.select().where(
@@ -68,7 +69,7 @@ def rasterstats_task(vector_id, raster_id, band, output_fp):
     RasterStats(
         vector=vector,
         raster=raster,
-        output=output_fp
+        output=output
     ).save()
 
 

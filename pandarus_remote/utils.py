@@ -15,19 +15,20 @@ def sha256(filepath, blocksize=65536):
     return hasher.hexdigest()
 
 
-def is_valid_spatial_dataset(filepath):
-    with fiona.drivers():
+def check_type(filepath):
+    """Determine if a GIS dataset is raster or vector.
+
+    ``filepath`` is a filepath of a GIS dataset file.
+
+    Returns one of ``('vector', 'raster', None)``."""
+    try:
+        with fiona.open(filepath) as ds:
+            assert ds.meta['schema']['geometry'] != 'None'
+        return 'vector'
+    except:
         try:
-            with fiona.open(filepath) as source:
-                assert source.meta
-                return True
+            with rasterio.open(filepath) as ds:
+                assert ds.meta
+            return 'raster'
         except:
-            pass
-    with rasterio.drivers():
-        try:
-            with rasterio.open(filepath) as source:
-                assert source.meta
-                return True
-        except:
-            pass
-    return False
+            return None

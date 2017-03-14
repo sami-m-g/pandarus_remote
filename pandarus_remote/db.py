@@ -15,7 +15,9 @@ import os
 class RetryDatabase(RetryOperationalError, SqliteDatabase):
     pass
 
-database = RetryDatabase(os.path.join(data_dir, "pandarus-remote.db"))
+db_filepath = os.path.join(data_dir, "pandarus-remote.db")
+print("Using database at", db_filepath)
+database = RetryDatabase(db_filepath)
 
 
 class File(Model):
@@ -26,6 +28,7 @@ class File(Model):
     layer = TextField(null=True)
     field = TextField(null=True)
     kind = TextField()
+    geometry_type = TextField(null=True)
 
     class Meta:
         database = database
@@ -39,19 +42,25 @@ class Intersection(Model):
 
     class Meta:
         database = database
+        indexes = [
+            (('first', 'second'), True),
+        ]
 
 
 class RasterStats(Model):
     vector = ForeignKeyField(File, related_name='vector_fk')
     raster = ForeignKeyField(File, related_name='raster_fk')
-    otuput = TextField()
+    output = TextField()
 
     class Meta:
         database = database
+        indexes = [
+            (('vector', 'raster'), True),
+        ]
 
 
 class Remaining(Model):
-    intersection = ForeignKeyField(Intersection, related_name='intersection_fk')
+    intersection = ForeignKeyField(Intersection, related_name='intersection_fk', unique=True)
     data_fp = TextField()
 
     class Meta:

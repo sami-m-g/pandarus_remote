@@ -87,7 +87,6 @@ Post the following form data:
 
 * ``name``: File name
 * ``sha256``: SHA 256 hash of file
-* ``kind``: Either `raster` or `vector`
 * ``band``: Raster band number. This field is required; pass ``''`` if single-band raster or vector dataset.
 * ``layer``: Vector layer name. This field is required; pass ``''`` if single-layer vector or raster dataset.
 * ``field``: Vector field that uniquely identifies spatial features. This field is required; pass ``''`` if raster dataset.
