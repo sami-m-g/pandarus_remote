@@ -180,7 +180,7 @@ def upload():
         layer, band, field, geom_type = None, request.form['band'] or None, None, None
     else:
         os.remove(filepath)
-        abort(409, "Invalid spatial dataset")
+        abort(406, "Invalid spatial dataset")
 
     # Provided hash is incorrect
     if our_hash != their_hash:
