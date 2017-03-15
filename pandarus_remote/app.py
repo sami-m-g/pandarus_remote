@@ -301,12 +301,14 @@ def calculate_rasterstats():
     ).count():
         abort(409, "This raster calculation result already exists")
 
+    output = os.path.join(data_dir, "rasterstats", uuid.uuid4().hex + '.json')
+
     job = redis_queue.enqueue(
         rasterstats_task,
         vector.id,
         raster.id,
         raster.band,
-        os.path.join(data_dir, "remaining", uuid.uuid4().hex + '.json'),
+        output,
         timeout=60 * 30
     )
 

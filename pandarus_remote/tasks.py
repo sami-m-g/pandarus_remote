@@ -21,8 +21,8 @@ def intersect_task(id1, id2, output):
 
     # Job enqueued twice
     if Intersection.select().where(
-            Intersection.first == first & \
-            Intersection.second == second).count():
+            (Intersection.first == first) &
+            (Intersection.second == second)).count():
         return
 
     vector, data = intersect(
@@ -36,8 +36,8 @@ def intersect_task(id1, id2, output):
     )
 
     if Intersection.select().where(
-            Intersection.first == first & \
-            Intersection.second == second).count():
+            (Intersection.first == first) &
+            (Intersection.second == second)).count():
         return
 
     Intersection(
@@ -54,16 +54,16 @@ def rasterstats_task(vector_id, raster_id, band, output_fp):
 
     # Job enqueued twice
     if RasterStats.select().where(
-            RasterStats.vector == vector & \
-            RasterStats.raster == raster).count():
+            (RasterStats.vector == vector) &
+            (RasterStats.raster == raster)).count():
         return
 
     output = raster_statistics(vector.filepath, vector.field, raster.filepath, output=output_fp, band=band)
 
     # Job enqueued twice
     if RasterStats.select().where(
-            RasterStats.vector == vector & \
-            RasterStats.raster == raster).count():
+            (RasterStats.vector == vector) &
+            (RasterStats.raster == raster)).count():
         return
 
     RasterStats(
