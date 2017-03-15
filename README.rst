@@ -33,7 +33,7 @@ Requirements
 * `requests <http://docs.python-requests.org/en/master/>`__
 * `rq <http://python-rq.org/>`__
 
-In addition, ``pandarus_remote`` requires that ``Redis <https://redis.io/>`__ be installed.
+In addition, ``pandarus_remote`` requires that `Redis <https://redis.io/>`__ be installed.
 
 Running the web service
 =======================
