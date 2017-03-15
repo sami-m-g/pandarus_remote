@@ -26,7 +26,6 @@ setup(
         "docopt",
         "fiona",
         "flask",
-        "numpy",
         "pandarus",
         "peewee",
         "rasterio",
