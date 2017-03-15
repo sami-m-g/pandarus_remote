@@ -9,6 +9,9 @@ import os
 
 import sys, traceback
 
+EXPORT_FORMAT = os.environ.get("PANDARUS_EXPORT_FORMAT") or 'GeoJSON'
+
+
 def intersect_task(id1, id2, output):
     try:
         cpus = int(os.environ['PANDARUS_CPUS'])
@@ -32,7 +35,7 @@ def intersect_task(id1, id2, output):
         second.field,
         dirpath = output,
         cpus=cpus,
-        driver='GeoJSON'
+        driver=EXPORT_FORMAT
     )
 
     if Intersection.select().where(
