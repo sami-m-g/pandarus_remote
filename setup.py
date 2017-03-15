@@ -29,6 +29,7 @@ setup(
         "pandarus",
         "peewee",
         "rasterio",
+        "redis",
         "requests",
         "rq",
     ],

@@ -29,6 +29,7 @@ Requirements
 * `flask <http://flask.pocoo.org/>`__
 * `pandarus <https://pypi.python.org/pypi/pandarus>`__
 * `peewee <http://docs.peewee-orm.com/en/latest/>`__
+* `redis <https://pypi.python.org/pypi/redis>`__
 * `rasterio <https://github.com/mapbox/rasterio>`__
 * `requests <http://docs.python-requests.org/en/master/>`__
 * `rq <http://python-rq.org/>`__
