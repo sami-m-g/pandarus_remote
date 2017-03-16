@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from .db import Intersection, File, RasterStats, Remaining
+from .filesystem import logs_dir
 from pandarus import (
     intersect,
     raster_statistics,
@@ -33,9 +34,10 @@ def intersect_task(id1, id2, output):
         first.field,
         second.filepath,
         second.field,
-        dirpath = output,
+        dirpath=output,
         cpus=cpus,
-        driver=EXPORT_FORMAT
+        driver=EXPORT_FORMAT,
+        log_dir=logs_dir
     )
 
     if Intersection.select().where(
