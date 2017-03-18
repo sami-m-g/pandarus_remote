@@ -19,7 +19,6 @@ from flask import (
 from peewee import DoesNotExist
 from werkzeug import secure_filename
 import fiona
-import hashlib
 import json
 import os
 import uuid
@@ -156,7 +155,6 @@ def get_vector():
 
 @pr_app.route('/upload', methods=['POST'])
 def upload():
-    print("Starting upload:", request.form)
     their_hash = request.form['sha256']
     filename = secure_filename(request.form['name'])
     file_obj = request.files['file']

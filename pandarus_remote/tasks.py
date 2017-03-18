@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from .db import Intersection, File, RasterStats, Remaining
+from .utils import sha256
 from pandarus import (
     intersect,
     raster_statistics,
     calculate_remaining,
 )
+import fiona
 import os
 
-import sys, traceback
 
 EXPORT_FORMAT = os.environ.get("PANDARUS_EXPORT_FORMAT") or 'GeoJSON'
 
@@ -33,7 +34,7 @@ def intersect_task(id1, id2, output):
         first.field,
         second.filepath,
         second.field,
-        dirpath = output,
+        dirpath=output,
         cpus=cpus,
         driver=EXPORT_FORMAT
     )
@@ -48,6 +49,41 @@ def intersect_task(id1, id2, output):
         second=second,
         data_fp=data,
         vector_fp=vector,
+    ).save()
+
+    # Save intersection data files for new spatial scale
+    with fiona.open(vector) as src:
+        geom_type = src.meta['schema']['geometry']
+
+    third = File(
+        filepath=vector,
+        name=os.path.basename(vector),
+        sha256=sha256(vector),
+        band='',
+        layer='',
+        field='id',
+        kind='vector',
+        geometry_type=geom_type,
+    ).save()
+
+    fp1, fp2 = intersections_from_intersection(
+        vector,
+        data,
+        output
+    )
+
+    Intersection(
+        first=third,
+        second=first,
+        data_fp=fp1,
+        vector_fp=vector
+    ).save()
+
+    Intersection(
+        first=third,
+        second=second,
+        data_fp=fp2,
+        vector_fp=vector
     ).save()
 
 
