@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from .db import Intersection, File, RasterStats, Remaining
+from .filesystem import logs_dir
 from .utils import sha256
 from pandarus import (
     intersect,
@@ -36,7 +37,8 @@ def intersect_task(id1, id2, output):
         second.field,
         dirpath=output,
         cpus=cpus,
-        driver=EXPORT_FORMAT
+        driver=EXPORT_FORMAT,
+        log_dir=logs_dir
     )
 
     if Intersection.select().where(

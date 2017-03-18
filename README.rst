@@ -50,6 +50,14 @@ Finally, run the ``flask`` application any way you want. For example, to run the
     export FLASK_APP=/path/to/pandarus_remote/__init__.py
     flask run
 
+Environment variables
+---------------------
+
+The following environment variables can be used to configure ``pandarus_remote``:
+
+* ``PANDARUS_EXPORT_FORMAT``: A string specifying the Fiona driver to use, like "GPKG" or "GeoJSON"
+* ``PANDARUS_CPUS``: The number of CPUs to use when performing intersection calculations
+
 API endpoints
 =============
 
