@@ -226,11 +226,11 @@ def calculate_intersection():
 
     # Correct file types
     if not first.kind == 'vector' and second.kind == 'vector':
-        abort(409, "Both files must be vector datasets")
+        abort(406, "Both files must be vector datasets")
 
     # Make sure correct types
     if not second.geometry_type in ("Polygon", "MultiPolygon"):
-        abort(409, "Invalid geometry type for intersection")
+        abort(406, "Invalid geometry type for intersection")
 
     # Make sure Intersection doesn't exist
     if Intersection.select().where(
