@@ -60,7 +60,7 @@ def intersect_task(id1, id2, output):
     with fiona.open(vector) as src:
         geom_type = src.meta['schema']['geometry']
 
-    third = File(
+    third = File.create(
         filepath=vector,
         name=os.path.basename(vector),
         sha256=sha256(vector),
@@ -69,7 +69,7 @@ def intersect_task(id1, id2, output):
         field='id',
         kind='vector',
         geometry_type=geom_type,
-    ).save()
+    )
 
     fp1, fp2 = intersections_from_intersection(
         vector,
