@@ -4,6 +4,7 @@ from .filesystem import logs_dir
 from .utils import sha256
 from pandarus import (
     intersect,
+    intersections_from_intersection,
     raster_statistics,
     calculate_remaining,
 )
@@ -23,6 +24,8 @@ def intersect_task(id1, id2, output):
 
     first = File.get(File.id == id1)
     second = File.get(File.id == id2)
+
+    print("Intersect task:", first.name, second.name)
 
     # Job enqueued twice
     if Intersection.select().where(
