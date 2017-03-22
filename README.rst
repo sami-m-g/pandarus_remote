@@ -66,7 +66,7 @@ The following API endpoints are supported:
 /
 -
 
-Ping the server. Returns something like ``pandarus_remote web service, version (0, 2)``.
+Ping the server. Returns something like ``pandarus_remote web service, version (1, 0)``.
 
 HTTP method: **GET**
 

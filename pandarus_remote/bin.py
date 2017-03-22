@@ -19,7 +19,7 @@ import os
 
 
 def webapp():
-    args = docopt(__doc__, version='Pandarus-remote web service 0.1')
+    args = docopt(__doc__, version='Pandarus-remote web service 1.0')
     port = int(args.get("--port", False) or 5000)
     host = "localhost" if args.get("--localhost", False) else "0.0.0.0"
 

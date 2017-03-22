@@ -5,8 +5,7 @@ setup(
     author="Chris Mutel",
     author_email="cmutel@gmail.com",
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: End Users/Desktop',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
@@ -14,6 +13,7 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Mathematics',
     ],
     entry_points = {
@@ -26,7 +26,7 @@ setup(
         "docopt",
         "fiona",
         "flask",
-        "pandarus",
+        "pandarus>=1.0",
         "peewee",
         "rasterio",
         "redis",
@@ -37,6 +37,6 @@ setup(
     long_description=open('README.rst').read(),
     name='pandarus_remote',
     packages=["pandarus_remote"],
-    url="https://bitbucket.org/cmutel/pandarus_remote",
-    version="0.2",
+    url="https://github.com/cmutel/pandarus_remote",
+    version="1.0",
 )
