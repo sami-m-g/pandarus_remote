@@ -13,8 +13,9 @@ Installation
 
 .. code-block:: bash
 
-    conda config --add channels conda-forge cmutel
-    conda create -n pandarus python=3.5
+    conda config --add channels conda-forge
+    conda config --add channels cmutel
+    conda create -n pandarus python=3.9
     source activate pandarus
     conda install pandarus_remote
 
