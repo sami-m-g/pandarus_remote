@@ -1,22 +1,17 @@
 from .filesystem import data_dir
 from peewee import (
-    BlobField,
     ForeignKeyField,
     IntegerField,
     Model,
     SqliteDatabase,
     TextField,
 )
-from playhouse.shortcuts import RetryOperationalError
 import os
 
 
-class RetryDatabase(RetryOperationalError, SqliteDatabase):
-    pass
-
 db_filepath = os.path.join(data_dir, "pandarus-remote.db")
 print("Using database at", db_filepath)
-database = RetryDatabase(db_filepath)
+database = SqliteDatabase(db_filepath)
 
 
 class File(Model):
