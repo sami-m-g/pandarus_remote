@@ -1,6 +1,6 @@
 __all__ = ['pr_app']
 
-__version__ = (1, 0)
+__version__ = (1, 1)
 
 from flask import Flask
 from redis import Redis

@@ -16,7 +16,7 @@ Installation
     conda config --add channels conda-forge
     conda config --add channels cmutel
     conda create -n pandarus python=3.9
-    source activate pandarus
+    conda activate pandarus
     conda install pandarus_remote
 
 Requirements

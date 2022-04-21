@@ -38,5 +38,5 @@ setup(
     name='pandarus_remote',
     packages=["pandarus_remote"],
     url="https://github.com/cmutel/pandarus_remote",
-    version="1.0",
+    version="1.1",
 )
