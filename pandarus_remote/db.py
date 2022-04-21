@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .filesystem import data_dir
 from peewee import (
     BlobField,

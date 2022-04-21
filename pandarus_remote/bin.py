@@ -15,7 +15,6 @@ Options:
 """
 from docopt import docopt
 from pandarus_remote import pr_app
-import os
 
 
 def webapp():

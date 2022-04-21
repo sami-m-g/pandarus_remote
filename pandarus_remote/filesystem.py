@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import appdirs
 import os
 
@@ -6,6 +5,7 @@ import os
 def create_dir(dirpath):
     if not os.path.isdir(dirpath):
         os.makedirs(dirpath)
+
 
 data_dir = appdirs.user_data_dir("PandarusRemote", "PR")
 logs_dir = appdirs.user_log_dir("PandarusRemote", "PR")

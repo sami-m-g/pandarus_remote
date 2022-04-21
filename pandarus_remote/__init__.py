@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 __all__ = ['pr_app']
 
 __version__ = (1, 0)

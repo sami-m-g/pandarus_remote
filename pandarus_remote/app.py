@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 from . import pr_app
 from .db import (
-    database,
     File,
     Intersection,
     RasterStats,

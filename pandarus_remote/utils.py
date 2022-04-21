@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import fiona
 import hashlib
 import rasterio
