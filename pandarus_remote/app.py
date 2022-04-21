@@ -46,7 +46,7 @@ def status(job_id):
         abort(404)
     if not job:
         abort(404)
-    return job.status
+    return job.get_status()
 
 
 @pr_app.route('/catalog')
@@ -241,7 +241,7 @@ def calculate_intersection():
         first.id,
         second.id,
         os.path.join(data_dir, "intersections"),
-        timeout=60 * 60 * 4
+        job_timeout=60 * 60 * 4
     )
 
     return url_for("status", job_id=job.id)
@@ -270,7 +270,7 @@ def calculate_remaining():
         remaining_task,
         intersection.id,
         os.path.join(data_dir, "remaining"),
-        timeout=60 * 30
+        job_timeout=60 * 30
     )
 
     return url_for("status", job_id=job.id)
@@ -305,7 +305,7 @@ def calculate_rasterstats():
         raster.id,
         raster.band,
         output,
-        timeout=60 * 30
+        job_timeout=60 * 30
     )
 
     return url_for("status", job_id=job.id)
