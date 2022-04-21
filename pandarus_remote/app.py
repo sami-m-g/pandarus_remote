@@ -15,7 +15,7 @@ from flask import (
     url_for,
 )
 from peewee import DoesNotExist
-from werkzeug import secure_filename
+from werkzeug.utils import secure_filename
 import fiona
 import json
 import os
