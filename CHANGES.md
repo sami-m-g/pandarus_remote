@@ -5,6 +5,7 @@
 - Upgrade to python 3.8+
 - Switch to pandarus v2.0.0
 - Refactor pandarus_remote
+- Added CI/CD
 
 ## 1.1 (DEV)
 
