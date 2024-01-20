@@ -1,6 +1,25 @@
 # pandarus_remote
 
-Pandarus_remote is a web service for processing and managing data for regionalized life cycle assessment using `pandarus <https://pypi.python.org/pypi/pandarus>`__. It is meant to be used by the `brightway2-regional <https://brightway2-regional.readthedocs.io/>`__ library.
+[![PyPI](https://img.shields.io/pypi/v/pandarus_remote.svg)][pypi status]
+[![Status](https://img.shields.io/pypi/status/pandarus_remote.svg)][pypi status]
+[![Python Version](https://img.shields.io/pypi/pyversions/pandarus_remote)][pypi status]
+[![License](https://img.shields.io/pypi/l/pandarus_remote)][license]
+
+[![Read the documentation at https://pandarus_remote.readthedocs.io/](https://img.shields.io/readthedocs/pandarus_remote/latest.svg?label=Read%20the%20Docs)][read the docs]
+[![Tests](https://github.com/cmutel/pandarus_remote/actions/workflows/python-test.yml/badge.svg)][tests]
+[![Codecov](https://codecov.io/gh/cmutel/pandarus_remote/branch/main/graph/badge.svg)][codecov]
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+
+[pypi status]: https://pypi.org/project/pandarus_remote/
+[read the docs]: https://pandarus_remote.readthedocs.io/
+[tests]: https://github.com/cmutel/pandarus_remote/actions?workflow=Tests
+[codecov]: https://app.codecov.io/gh/cmutel/pandarus_remote
+[pre-commit]: https://github.com/pre-commit/pre-commit
+[black]: https://github.com/psf/black
+
+Pandarus_remote is a web service for processing and managing data for regionalized life cycle assessment using `pandarus_remote <https://pypi.python.org/pypi/pandarus_remote>`__. It is meant to be used by the `brightway2-regional <https://brightway2-regional.readthedocs.io/>`__ library.
 
 ## Installation
 
@@ -249,3 +268,28 @@ HTTP method: **GET**
 
 * 200: Returns a text response giving the current job status. If the job is finished, the response will be ``finished``.
 * 404: The requested job id was not found
+
+Source code is available on [GitHub](https://github.com/cmutel/pandarus_remote).
+
+## Contributing
+
+Contributions are very welcome.
+To learn more, see the [Contributor Guide][Contributor Guide].
+
+## License
+
+Distributed under the terms of the [BSD-2-Clause][License],
+_pyilcd_ is free and open source software.
+
+## Issues
+
+If you encounter any problems,
+please [file an issue][Issue Tracker] along with a detailed description.
+
+
+<!-- github-only -->
+
+[command-line reference]: https://pandarus_remote.readthedocs.io/en/latest/usage.html
+[License]: https://github.com/cmutel/pandarus_remote/blob/main/LICENSE
+[Contributor Guide]: https://github.com/cmutel/pandarus_remote/blob/main/CONTRIBUTING.md
+[Issue Tracker]: https://github.com/cmutel/pandarus_remote/issues
