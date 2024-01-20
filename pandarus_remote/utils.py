@@ -1,33 +1,30 @@
-import fiona
-import hashlib
-import rasterio
+"""Utility functions for the __pandarus_remote__ package."""
+from pathlib import Path
+from typing import Any, Callable, Dict, Tuple
+
+from . import pr_app
 
 
-def sha256(filepath, blocksize=65536):
-    """Generate SHA 256 hash for file at `filepath`"""
-    hasher = hashlib.sha256()
-    fo = open(filepath, 'rb')
-    buf = fo.read(blocksize)
-    while len(buf) > 0:
-        hasher.update(buf)
-        buf = fo.read(blocksize)
-    return hasher.hexdigest()
+def log_exceptions(func: Callable) -> Callable:
+    """Log the exception and raise it again."""
 
-
-def check_type(filepath):
-    """Determine if a GIS dataset is raster or vector.
-
-    ``filepath`` is a filepath of a GIS dataset file.
-
-    Returns one of ``('vector', 'raster', None)``."""
-    try:
-        with fiona.open(filepath) as ds:
-            assert ds.meta['schema']['geometry'] != 'None'
-        return 'vector'
-    except:
+    def wrapper(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> Any:
         try:
-            with rasterio.open(filepath) as ds:
-                assert ds.meta
-            return 'raster'
-        except:
-            return None
+            return func(*args, **kwargs)
+        except Exception as e:
+            pr_app.logger.exception(e)
+            raise e
+
+    return wrapper
+
+
+def create_if_not_exists(path_func: Callable[[Any], Path]) -> Callable[[], Path]:
+    """Decorator to create a directory if it doesn't exist."""
+
+    def wrapper(instance: Any) -> Path:
+        """Wrapper function for creating a directory if it doesn't exist."""
+        path = path_func(instance)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    return wrapper

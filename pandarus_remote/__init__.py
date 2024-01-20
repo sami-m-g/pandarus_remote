@@ -1,15 +1,8 @@
-__all__ = ['pr_app']
-
-__version__ = (1, 1)
+"""__pandarus_remote__ web service package."""
+__all__ = ["__version__", "pr_app"]
 
 from flask import Flask
-from redis import Redis
-from rq import Queue
 
-redis_queue = Queue(connection=Redis())
-pr_app = Flask("PRemote")
+from .version import __version__
 
-# Default limit for file uploads is 250 MB
-pr_app.config['MAX_CONTENT_LENGTH'] = 250 * 1024 * 1024
-
-from . import app
+pr_app = Flask(__name__)

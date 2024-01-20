@@ -1,5 +1,11 @@
 # Changes
 
+### 2.0.0 (2023-12-24)
+
+- Upgrade to python 3.8+
+- Switch to pandarus v2.0.0
+- Refactor pandarus_remote
+
 ## 1.1 (DEV)
 
 Updates for changes to dependency APIs

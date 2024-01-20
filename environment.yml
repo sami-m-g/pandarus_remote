@@ -1,0 +1,18 @@
+name: pandarus_remote
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - appdirs
+  - docopt
+  - fiona
+  - flask
+  - gdal
+  - geos
+  - peewee
+  - pybind11
+  - redis
+  - rq
+  - pip:
+    - git+https://github.com/isciences/exactextract.git#subdirectory=python&egg=exactextract
+    - pandarus==2.0.1.dev0
