@@ -2,7 +2,7 @@ name: Python 🐍 CI/CD tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
     paths-ignore: # prevents workflow execution when only these types of files are modified
       - "**.md" # wildcards prevent file in any repo dir from trigering workflow
       - "**.bib"
@@ -10,7 +10,7 @@ on:
       - "LICENSE"
       - ".gitignore"
   pull_request:
-    branches: [main, develop]
+    branches: [master, develop]
     types: [opened, reopened] # excludes syncronize to avoid redundant trigger from commits on PRs
     paths-ignore:
       - "**.md"
@@ -37,6 +37,41 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: anaconda-client-env
+          use-mamba: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get Date
+        id: get-date
+        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Cache Conda env
+        uses: actions/cache@v3
+        with:
+          path: ~/conda/envs
+          key:
+            conda-${{ runner.os }}--${{ runner.arch }}--${{
+            steps.get-date.outputs.today }}-${{
+            hashFiles('.github/python_test_env.yml') }}-${{ env.CACHE_NUMBER
+            }}
+        env:
+          # Increase this value to reset cache if .github/python_test_env.yml has not changed
+          CACHE_NUMBER: 0
+        id: cache
+
+      - name: Update environment
+        run:
+          mamba env update -n anaconda-client-env -f
+          .github/python_test_env.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
 
       - name: Install package
         run: pip install .[test]
