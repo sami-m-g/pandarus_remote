@@ -38,7 +38,6 @@ conda install pandarus_remote
 ``pandarus_remote`` requires the following Python libraries:
 
 * `appdirs <https://pypi.python.org/pypi/appdirs>`__
-* `docopt <https://pypi.python.org/pypi/docopt>`__
 * `fiona <https://pypi.python.org/pypi/Fiona>`__
 * `flask <http://flask.pocoo.org/>`__
 * `pandarus <https://pypi.python.org/pypi/pandarus>`__
