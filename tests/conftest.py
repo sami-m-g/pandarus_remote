@@ -1,13 +1,17 @@
 """Test suite for the __pandarus_remote__ package."""
+from functools import wraps
+from io import BytesIO
 from pathlib import Path
-from typing import Callable, Generator
+from typing import Callable, Generator, Tuple
 
 import appdirs
 import fakeredis
 import pytest
+from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
 from werkzeug.datastructures import FileStorage
 
+from pandarus_remote.app import create_app
 from pandarus_remote.helpers import DatabaseHelper, IOHelper, RedisHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 
@@ -47,12 +51,13 @@ def assert_upload_file(
 
 @pytest.fixture
 def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
-    """Create a temporary in-memory database and return a DatabaseHelper.
+    """Mock a temporary in-memory database and return a DatabaseHelper.
     If insert_files is True, insert two files. If insert_intersections is True,
     insert two intersections. If insert_raster_stats is True, insert two
     raster stats. If insert_remaining is True, insert two remaining."""
 
-    def _database_helper(
+    @wraps(database_helper)
+    def wrapper(
         inserted_files: int = 0,
         insert_intersections: bool = False,
         insert_raster_stats: bool = False,
@@ -130,7 +135,7 @@ def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
             ).execute(None)
         return helper
 
-    return _database_helper
+    return wrapper
 
 
 @pytest.fixture
@@ -139,3 +144,25 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
     fake_redis = fakeredis.FakeStrictRedis()
     yield RedisHelper(redis_connection=fake_redis)
     fake_redis.flushall()
+
+
+@pytest.fixture
+def client() -> Generator[FlaskClient, None, None]:
+    """Mock the FlaskClient."""
+    app = create_app()
+    with app.test_client() as test_client:
+        yield test_client
+
+
+@pytest.fixture
+def mock_uploaded_file() -> Generator[Tuple[File, Tuple[BytesIO, str]], None, None]:
+    """Mock an uploaded file."""
+    file_model = File(
+        name="name",
+        kind="kind",
+        sha256="sha256",
+        file_path="file_path",
+        band="band",
+    )
+    file_content = (BytesIO(b"Test"), "test.txt")
+    yield file_model, file_content

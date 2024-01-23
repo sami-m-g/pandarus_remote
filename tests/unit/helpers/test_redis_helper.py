@@ -22,10 +22,10 @@ def test_get_job_status_exists(redis_helper) -> None:
 
 
 def test_enqueue_interesect_job(redis_helper) -> None:
-    """Test the RedisHelper.enqueue_intersect_job method."""
+    """Test the RedisHelper.enqueue_intersection_job method."""
     file1 = File(name="name1", kind="kind1", sha256="sha2561")
     file2 = File(name="name2", kind="kind2", sha256="sha2562")
-    job = redis_helper.enqueue_intersect_job(file1, file2)
+    job = redis_helper.enqueue_intersection_job(file1, file2)
     assert job.args[0].name == file1.name
     assert job.args[1].name == file2.name
 

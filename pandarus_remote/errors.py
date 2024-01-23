@@ -14,11 +14,7 @@ class JobNotFoundError(PandarusRemoteError):
         super().__init__(f"Job {job_id} not found.")
 
 
-class QueryError(PandarusRemoteError):
-    """Raised when a query parameter is not valid."""
-
-
-class NoEntryFoundError(QueryError):
+class NoEntryFoundError(PandarusRemoteError):
     """Raised when no entry is found in the database."""
 
     def __init__(self, entries_sha256: List[str]) -> None:
@@ -26,7 +22,7 @@ class NoEntryFoundError(QueryError):
         super().__init__(f"No entry found for hash(es): {entries_sha256}.")
 
 
-class ResultAlreadyExistsError(QueryError):
+class ResultAlreadyExistsError(PandarusRemoteError):
     """Raised when a result already exists in the database."""
 
     def __init__(self, entries_sha256: List[str]) -> None:
@@ -72,14 +68,14 @@ class InvalidIntersectionFileTypesError(PandarusRemoteError):
     def __init__(
         self,
         file1_hash: str,
-        file1_type: str,
+        file1_kind: str,
         file2_hash: str,
-        file2_type: str,
+        file2_kind: str,
     ) -> None:
         super().__init__(
             f"""
-            Cannot intersect file: {file1_hash} of type: {file1_type} with
-            file: {file2_hash} of type: {file2_type}. Both files must be
+            Cannot intersect file: {file1_hash} of kind: {file1_kind} with
+            file: {file2_hash} of kind: {file2_kind}. Both files must be
             vector datasets.
         """
         )
@@ -91,14 +87,14 @@ class InvalidIntersectionGeometryTypeError(PandarusRemoteError):
     def __init__(
         self,
         file1_hash: str,
-        file1_type: str,
+        file1_kind: str,
         file2_hash: str,
-        file2_type: str,
+        file2_kind: str,
     ) -> None:
         super().__init__(
             f"""
-            Cannot intersect file: {file1_hash} of type: {file1_type} with
-            file: {file2_hash} of type: {file2_type}. Second file must be
+            Cannot intersect file: {file1_hash} of kind: {file1_kind} with
+            file: {file2_hash} of kind: {file2_kind}. Second file must be
             polygon/ multipolygon datasets.
         """
         )
@@ -110,14 +106,14 @@ class InvalidRasterstatsFileTypesError(PandarusRemoteError):
     def __init__(
         self,
         vector_hash: str,
-        vector_type: str,
+        vector_kind: str,
         raster_hash: str,
-        raster_type: str,
+        raster_kind: str,
     ) -> None:
         super().__init__(
             f"""
-            Can't calculate raster_stats for file: {vector_hash} of type: {vector_type}
-            ith file: {raster_hash} of type: {raster_type}. First file must be vector
+            Can't calculate raster_stats for file: {vector_hash} of kind: {vector_kind}
+            with file: {raster_hash} of kind: {raster_kind}. First file must be vector
             dataset and second file must be raster dataset.
         """
         )

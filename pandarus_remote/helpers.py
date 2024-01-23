@@ -315,7 +315,7 @@ class RedisHelper:
         raise JobNotFoundError(job_id)
 
     @loggable
-    def enqueue_intersect_job(self, file1: File, file2: File) -> Job:
+    def enqueue_intersection_job(self, file1: File, file2: File) -> Job:
         """Enqueues an intersect job."""
         return self.queue.enqueue(
             TaskHelper().intersect_task,

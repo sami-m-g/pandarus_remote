@@ -1,10 +1,24 @@
 """Test cases for the __utils__ module."""
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
 
-from pandarus_remote.utils import create_if_not_exists, loggable
+from pandarus_remote.errors import (
+    IntersectionWithSelfError,
+    InvalidIntersectionFileTypesError,
+    InvalidIntersectionGeometryTypeError,
+    InvalidRasterstatsFileTypesError,
+    NoEntryFoundError,
+    ResultAlreadyExistsError,
+)
+from pandarus_remote.utils import (
+    calculate_endpoint,
+    create_if_not_exists,
+    get_calculation_endpoint,
+    loggable,
+)
 
 
 def test_loggable_with_arguments_and_return(caplog) -> None:
@@ -66,3 +80,134 @@ def test_create_if_not_exists(tmp_path) -> None:
 
     path = _path_function()
     assert path.exists()
+
+
+def test_get_calculation_endpoint(monkeypatch) -> None:
+    """Test the get_calculation_endpoint decorator."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    @get_calculation_endpoint
+    def _calculation_function() -> str:
+        return "test"
+
+    assert _calculation_function() == ("test", HTTPStatus.OK)
+
+
+def test_get_calculation_endpoint_no_entry_found(monkeypatch) -> None:
+    """Test the get_calculation_endpoint decorator with NoEntryFoundError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = NoEntryFoundError("Test")
+
+    @get_calculation_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.NOT_FOUND)
+
+
+def test_get_calculation_endpoint_result_already_exists(monkeypatch) -> None:
+    """Test the get_calculation_endpoint decorator with ResultAlreadyExistsError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = ResultAlreadyExistsError("Test")
+
+    @get_calculation_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.CONFLICT)
+
+
+def test_calculate_endpoint(monkeypatch) -> None:
+    """Test the calculate_endpoint decorator."""
+    monkeypatch.setattr("pandarus_remote.utils.url_for", lambda *_, **__: "test")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        return "test"
+
+    assert _calculation_function() == ("test", HTTPStatus.ACCEPTED)
+
+
+def test_calculate_endpoint_no_entry_found(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with NoEntryFoundError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = NoEntryFoundError("Test")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.NOT_FOUND)
+
+
+def test_calculate_endpoint_result_already_exists(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with ResultAlreadyExistsError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = ResultAlreadyExistsError("Test")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.CONFLICT)
+
+
+def test_calculate_endpoint_invalid_rasterstats_file_types(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with
+    InvalidRasterstatsFileTypesError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = InvalidRasterstatsFileTypesError("sha2561", "raster", "sha2562", "vector")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+
+def test_calculate_endpoint_invalid_intersection_geometry_type(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with
+    InvalidIntersectionGeometryTypeError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = InvalidIntersectionGeometryTypeError(
+        "sha2561", "raster", "sha2562", "vector"
+    )
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+
+def test_calculate_endpoint_invalid_intersection_file_types(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with
+    InvalidIntersectionFileTypesError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = InvalidIntersectionFileTypesError("sha2561", "raster", "sha2562", "vector")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+
+def test_calculate_endpoint_intersection_with_self(monkeypatch) -> None:
+    """Test the test_calculate_endpoint decorator with IntersectionWithSelfError."""
+    monkeypatch.setattr("pandarus_remote.utils.send_file", lambda *_, **__: "test")
+
+    error = IntersectionWithSelfError("sha2561")
+
+    @calculate_endpoint
+    def _calculation_function() -> str:
+        raise error
+
+    assert _calculation_function() == ({"error": str(error)}, HTTPStatus.BAD_REQUEST)

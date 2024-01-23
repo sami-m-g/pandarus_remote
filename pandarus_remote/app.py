@@ -8,7 +8,7 @@ from .routes import routes_blueprint
 from .version import __version__
 
 
-def create_app(configs: Optional[Dict[str, Any]]) -> Flask:
+def create_app(configs: Optional[Dict[str, Any]] = None) -> Flask:
     """Create the flask app."""
     if not configs:
         configs = {"MAX_CONTENT_LENGTH": 250 * 1024 * 1024}  # pragma: no cover
