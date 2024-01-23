@@ -1,19 +1,30 @@
 """Utility functions for the __pandarus_remote__ package."""
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
 
-from . import pr_app
 
-
-def log_exceptions(func: Callable) -> Callable:
-    """Log the exception and raise it again."""
+def loggable(func: Callable) -> Callable:
+    """Decorator for adding logs to functions."""
 
     def wrapper(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> Any:
+        """Wrapper function for adding logs to functions."""
+        if args or kwargs:
+            arguments = ", ".join(
+                [repr(arg) for arg in args] + [repr(value) for value in kwargs.values()]
+            )
+            arguments_str = f"arguments: {arguments}"
+        else:
+            arguments_str = "no arguments"
+        logging.debug("Starting %s with %s.", func.__name__, arguments_str)
         try:
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
         except Exception as e:
-            pr_app.logger.exception(e)
+            logging.exception(e)
             raise e
+        results_str = f"return: {result}" if result else "no return"
+        logging.debug("Finished %s with %s.", func.__name__, results_str)
+        return result
 
     return wrapper
 

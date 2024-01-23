@@ -22,7 +22,6 @@ from rq.job import Job
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-from . import pr_app
 from .errors import (
     FileAlreadyExistsError,
     InvalidSpatialDatasetError,
@@ -32,7 +31,7 @@ from .errors import (
     ResultAlreadyExistsError,
 )
 from .models import BaseModel, File, Intersection, RasterStats, Remaining
-from .utils import create_if_not_exists, log_exceptions
+from .utils import create_if_not_exists, loggable
 
 
 class IOHelper:
@@ -47,8 +46,8 @@ class IOHelper:
 
     def __init__(
         self,
-        app_name: str = pr_app.name,
-        app_author: str = pr_app.name,
+        app_name: str = "pandarus_remote",
+        app_author: str = "pandarus_remote",
         uploads_sub_dir: str = "uploads",
         intersections_sub_dir: str = "intersections",
         raster_stats_sub_dir: str = "raster_stats",
@@ -157,7 +156,6 @@ class DatabaseHelper:
         self,
         database: str = IOHelper().data_dir / "pandarus_remote.db",
     ) -> None:
-        pr_app.logger.info("Using database at: %s", database)
         self._database = SqliteDatabase(database)
         self._database.bind([File, Intersection, RasterStats, Remaining])
         self._database.create_tables([File, Intersection, RasterStats, Remaining])
@@ -201,7 +199,7 @@ class DatabaseHelper:
             "raster_stats": self.raster_stats,
         }
 
-    @log_exceptions
+    @loggable
     def validate_query(
         self,
         file1_hash: str,
@@ -230,15 +228,13 @@ class DatabaseHelper:
                     raise NoEntryFoundError([file1_hash, file2_hash]) from dne
         return file1, file2
 
+    @loggable
     def get_raster_stats(
         self, vector_sha256: str, raster_sha256: str, should_exist: bool = True
     ) -> RasterStats:
         """Returns a raster_stats ouput path. Raises QueryError if the vector_sha256 or
         raster_sha256 are not found or RasterStats with vector_sha256 and raster_sha256
         combination doesn't exist."""
-        pr_app.logger.debug(
-            "Getting raster_stats for: %s %s", vector_sha256, raster_sha256
-        )
         return self.validate_query(
             vector_sha256,
             raster_sha256,
@@ -249,15 +245,13 @@ class DatabaseHelper:
             should_exist,
         )
 
+    @loggable
     def get_intersection(
         self, file1_sha256: str, file2_sha256: str, should_exist: bool = True
     ) -> Intersection:
         """Return an intersection. Raises QueryError if the file1_sha256 or file2_sha256
         are not found or Intersection with file1_sha256 and file2_sha256 combination
         doesn't exist."""
-        pr_app.logger.debug(
-            "Getting intersection for: %s %s", file1_sha256, file2_sha256
-        )
         return self.validate_query(
             file1_sha256,
             file2_sha256,
@@ -268,34 +262,27 @@ class DatabaseHelper:
             should_exist,
         )
 
-    @log_exceptions
+    @loggable
     def get_remaining(
         self, file1_sha256: str, file2_sha256: str, should_exist: bool = True
     ) -> Remaining:
         """Return a remaining for file1_d and file2_d. Raises QueryError if the
         file1_sha256 or file2_sha256 are not found or Remaining with file1_sha256
         and file2_sha256 combination doesn't exist."""
-        pr_app.logger.debug(
-            "Getting intersection for: %s %s", file1_sha256, file2_sha256
-        )
         intersection_id = self.get_intersection(
             file1_sha256, file2_sha256, should_exist
         ).id
         try:
-            pr_app.logger.debug(
-                "Getting remaining for intersection: %s", intersection_id
-            )
             return Remaining.get(Remaining.intersection == intersection_id)
         except DoesNotExist as dne:
             raise NoEntryFoundError([intersection_id]) from dne
 
-    @log_exceptions
+    @loggable
     def add_uploaded_file(self, file: File) -> None:
         """Add a file to the database. Raises FileAlreadyExistsError if the file already
         exists."""
         if File.select().where(File.sha256 == file.sha256).exists():
             raise FileAlreadyExistsError(file.name)
-        pr_app.logger.info("Saving file: %s", file.name)
         file.save()
 
 
@@ -319,7 +306,7 @@ class RedisHelper:
     ) -> None:
         self.queue = Queue(connection=redis_connection)
 
-    @log_exceptions
+    @loggable
     def get_job_status(self, job_id: str) -> Dict[str, str]:
         """Return the status of a job. Raises `JobNotFoundError` if job is not found."""
         job = self.queue.fetch_job(job_id)
@@ -327,9 +314,9 @@ class RedisHelper:
             return {"status": job.get_status(), "result": job.return_value()}
         raise JobNotFoundError(job_id)
 
+    @loggable
     def enqueue_intersect_job(self, file1: File, file2: File) -> Job:
         """Enqueues an intersect job."""
-        pr_app.logger.info("Enqueuing intersect job: %s %s", file1.name, file2.name)
         return self.queue.enqueue(
             TaskHelper().intersect_task,
             file1,
@@ -337,11 +324,9 @@ class RedisHelper:
             IOHelper().intersections_dir,
         )
 
+    @loggable
     def enqueue_raster_stats_job(self, vector: File, raster: File, band: int) -> Job:
         """Enqueues a rasterstats job."""
-        pr_app.logger.info(
-            "Enqueuing rasterstats job: %s %s %s", vector.name, raster.name, band
-        )
         return self.queue.enqueue(
             TaskHelper().raster_stats_task,
             vector.id,
@@ -350,9 +335,9 @@ class RedisHelper:
             IOHelper().raster_stats_dir,
         )
 
+    @loggable
     def enqueue_remaining_job(self, intersection: Intersection) -> Job:
         """Enqueues a remaining job."""
-        pr_app.logger.info("Enqueuing remaining job: %s", intersection.id)
         return self.queue.enqueue(
             TaskHelper().remaining_task,
             intersection.id,
@@ -386,11 +371,9 @@ class TaskHelper:
         except KeyError:
             return "GeoJSON"
 
-    @log_exceptions
+    @loggable
     def intersect_task(self, file1: File, file2: File) -> None:
         """Task to intersect two files."""
-        pr_app.logger.debug("Running intersect task: %s %s", file1.name, file2.name)
-
         vector_path, data = intersect(
             file1.file_path,
             file1.field,
@@ -440,13 +423,9 @@ class TaskHelper:
             vector_file_path=vector_path,
         ).save()
 
-    @log_exceptions
+    @loggable
     def raster_stats_task(self, vector: File, raster: File, raster_band: int) -> None:
         """Task to compute raster statistics."""
-        pr_app.logger.debug(
-            "Running rasterstats task: %s %s %d", vector.name, raster.name, raster_band
-        )
-
         raster_stats_path = raster_statistics(
             vector.file_path,
             vector.field,
@@ -460,10 +439,9 @@ class TaskHelper:
             output_file_path=raster_stats_path,
         ).save()
 
-    @log_exceptions
+    @loggable
     def remaining_task(self, intersection_id: int) -> None:
         """Task to compute remaining area."""
-        pr_app.logger.debug("Running remaining task: %d", intersection_id)
         intersection = Intersection.get(Intersection.id == intersection_id)
         source = intersection.first_file
         data_file_path = calculate_remaining(
