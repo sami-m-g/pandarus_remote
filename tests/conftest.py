@@ -1,6 +1,6 @@
 """Test suite for the __pandarus_remote__ package."""
 from pathlib import Path
-from typing import Callable, Generator, Tuple
+from typing import Callable, Generator
 
 import appdirs
 import fakeredis
@@ -13,42 +13,29 @@ from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 
 
 @pytest.fixture
-def mock_appdirs(tmp_path, monkeypatch) -> Tuple[Path, Path]:
-    """Mock the appdirs package to return a temporary directory."""
-    data_dir = tmp_path / "data"
-    logs_dir = tmp_path / "logs"
-    monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: data_dir)
-    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: logs_dir)
-    return data_dir, logs_dir
-
-
-@pytest.fixture
-def assert_path() -> Callable[[str, str], None]:
-    """Assert that the actual path is equal to the expected path and exists."""
-
-    def _assert_path(expected_path, actual_path) -> None:
-        assert actual_path == expected_path and actual_path.exists()
-
-    return _assert_path
+def io_helper(tmp_path, monkeypatch) -> Generator[IOHelper, None, None]:
+    """Mock the IOHelper."""
+    monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: tmp_path / "data")
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "data")
+    yield IOHelper("test_pandarus_remote", "test_pandarus_remote")
 
 
 @pytest.fixture
 def assert_upload_file(
-    mock_appdirs,  # pylint: disable=redefined-outer-name
+    io_helper,  # pylint: disable=redefined-outer-name
 ) -> Callable[[str, str], None]:
     """Assert that the uploaded file is equal to the expected file."""
 
     def _assert_upload_file(
         file_path: Path, hash_func: Callable[[Path], str] = sha256_file
     ) -> None:
-        _, __ = mock_appdirs
         uploaded_file_hash = hash_func(file_path)
         with file_path.open("rb") as stream:
             file_storage = FileStorage(
                 stream=stream,
                 filename=file_path.name,
             )
-            file = IOHelper().save_uploaded_file(
+            file = io_helper.save_uploaded_file(
                 file_storage,
                 file_path.name,
                 uploaded_file_hash,
@@ -148,7 +135,7 @@ def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
 
 @pytest.fixture
 def redis_helper() -> Generator[RedisHelper, None, None]:
-    """Mock the redis helper."""
+    """Mock the RedisHelper."""
     fake_redis = fakeredis.FakeStrictRedis()
     yield RedisHelper(redis_connection=fake_redis)
     fake_redis.flushall()
