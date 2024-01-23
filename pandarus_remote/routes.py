@@ -6,7 +6,6 @@ from typing import Tuple
 
 from flask import Blueprint, Response, request, send_file, url_for
 
-from . import __version__, pr_app
 from .errors import (
     FileAlreadyExistsError,
     IntersectionWithSelfError,
@@ -20,24 +19,25 @@ from .errors import (
     ResultAlreadyExistsError,
 )
 from .helpers import DatabaseHelper, IOHelper, RedisHelper
+from .version import __version__
 
 routes_blueprint = Blueprint("bp", __name__)
 
 
-@pr_app.route("/")
+@routes_blueprint.route("/")
 def ping() -> Tuple[Response, int]:
     """Ping the web service and return current version running."""
     return {"message": f"pandarus_remote web service {__version__}."}, HTTPStatus.OK
 
 
-@pr_app.route("/catalog")
+@routes_blueprint.route("/catalog")
 def catalog() -> Tuple[Response, int]:
     """Get a catalog of spatial datasets and results currently available on the
     server."""
     return (DatabaseHelper().catalog, HTTPStatus.OK)
 
 
-@pr_app.route("/status/<job_id>")
+@routes_blueprint.route("/status/<job_id>")
 def status(job_id: str) -> Tuple[Response, int]:
     """Get the status of a currently running job. Job status URLs are
     returned by the ``/calculate_intersection`` and ``/calculate_area``
@@ -48,7 +48,7 @@ def status(job_id: str) -> Tuple[Response, int]:
         return {"error": f"Job with id: {job_id} is not found."}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/raster_stats", methods=["POST"])
+@routes_blueprint.route("/raster_stats", methods=["POST"])
 def get_raster_stats() -> Tuple[Response, int]:
     """Request the download of the JSON data file from a raster stats calculation.
     Both spatial datasets should already be on the server (see ``/upload``), and
@@ -72,7 +72,7 @@ def get_raster_stats() -> Tuple[Response, int]:
         return {"error": str(e)}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/intersection", methods=["POST"])
+@routes_blueprint.route("/intersection", methods=["POST"])
 def get_intersection() -> Tuple[Response, int]:
     """Request the download of a pandarus intersections JSON data file
     for two spatial datasets. Both spatial datasets should already be on
@@ -97,7 +97,7 @@ def get_intersection() -> Tuple[Response, int]:
         return {"error": str(e)}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/remaining", methods=["POST"])
+@routes_blueprint.route("/remaining", methods=["POST"])
 def get_remaining() -> Tuple[Response, int]:
     """Request the download of the JSON data file from a remaining
     areas calculation. Both spatial datasets should already be on
@@ -122,7 +122,7 @@ def get_remaining() -> Tuple[Response, int]:
         return {"error": str(e)}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/upload", methods=["POST"])
+@routes_blueprint.route("/upload", methods=["POST"])
 def upload() -> Tuple[Response, int]:
     """Upload a spatial data file. The provided file must be
     openable by `fiona <https://github.com/Toblerity/Fiona>`__
@@ -147,7 +147,7 @@ def upload() -> Tuple[Response, int]:
         return {"error": str(fae)}, HTTPStatus.CONFLICT
 
 
-@pr_app.route("/calculate_intersection", methods=["POST"])
+@routes_blueprint.route("/calculate_intersection", methods=["POST"])
 def calculate_intersection() -> Tuple[Response, int]:
     """Calculate a pandarus intersections file for two vector spatial datasets.
     Both spatial datasets should already be on the server (see ``/upload``).
@@ -182,7 +182,7 @@ def calculate_intersection() -> Tuple[Response, int]:
         return {"error": str(fnfe)}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/calculate_rasterstats", methods=["POST"])
+@routes_blueprint.route("/calculate_rasterstats", methods=["POST"])
 def calculate_rasterstats() -> Tuple[Response, int]:
     """Calculate a raster stats file for a vector and a raster spatial dataset.
     Both spatial datasets should already be on the server (see ``/upload``)."""
@@ -206,7 +206,7 @@ def calculate_rasterstats() -> Tuple[Response, int]:
         return {"error": str(fnfe)}, HTTPStatus.NOT_FOUND
 
 
-@pr_app.route("/calculate_remaining", methods=["POST"])
+@routes_blueprint.route("/calculate_remaining", methods=["POST"])
 def calculate_remaining() -> Tuple[Response, int]:
     """Calculate a remaining areas file for two vector spatial datasets.
     Both spatial datasets should already be on the server (see ``/upload``)."""

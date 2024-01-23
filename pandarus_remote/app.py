@@ -4,15 +4,16 @@ from typing import Any, Dict, Optional
 from flask import Flask
 from pandarus import __version__ as pandarus_version
 
-from . import __version__, pr_app
 from .routes import routes_blueprint
+from .version import __version__
 
 
-def webapp(configs: Optional[Dict[str, Any]]) -> Flask:
+def create_app(configs: Optional[Dict[str, Any]]) -> Flask:
     """Create the flask app."""
     if not configs:
         configs = {"MAX_CONTENT_LENGTH": 250 * 1024 * 1024}  # pragma: no cover
 
+    pr_app = Flask("pandarus_remote")
     pr_app.register_blueprint(routes_blueprint)
     pr_app.config.update(configs)
     pr_app.logger.info(
