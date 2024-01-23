@@ -1,65 +1,51 @@
 """Test cases for the __RedisHelper__ class."""
 import pytest
-from rq.job import Job
 
 from pandarus_remote.errors import JobNotFoundError
-from pandarus_remote.helpers import RedisHelper, TaskHelper
 from pandarus_remote.models import File, Intersection
 
 
-def test_get_job_status_not_exists(mock_redis) -> None:
+def test_get_job_status_not_exists(redis_helper) -> None:
     """Test the RedisHelper.get_job_status method but job doesn't exist."""
     with pytest.raises(JobNotFoundError) as jnfe:
-        RedisHelper(redis_connection=mock_redis).get_job_status("job_id")
+        redis_helper.get_job_status("job_id")
         assert "job_id" in str(jnfe)
 
 
-def test_get_job_status_exists(mock_redis) -> None:
+def test_get_job_status_exists(redis_helper) -> None:
     """Test the RedisHelper.get_job_status method and job exists."""
-    job_id = "job_id"
-    job = Job.create(func=lambda: None, connection=mock_redis, id=job_id)
-    redis_helper = RedisHelper(redis_connection=mock_redis)
-    redis_helper.queue.enqueue_job(job)
-    assert redis_helper.get_job_status(job_id) == {
+    job = redis_helper.queue.enqueue(lambda: None)
+    assert redis_helper.get_job_status(job.id) == {
         "status": "queued",
         "result": None,
     }
 
 
-def test_enqueue_interesect_job(mock_redis, database_helper) -> None:
+def test_enqueue_interesect_job(redis_helper) -> None:
     """Test the RedisHelper.enqueue_intersect_job method."""
-    database_helper(inserted_files=2)
-    redis_helper = RedisHelper(redis_connection=mock_redis)
-    assert (
-        redis_helper.enqueue_intersect_job(
-            File.get(File.id == 1),
-            File.get(File.id == 2),
-        ).func_name
-        == TaskHelper().intersect_task.__name__
-    )
+    file1 = File(name="name1", kind="kind1", sha256="sha2561")
+    file2 = File(name="name2", kind="kind2", sha256="sha2562")
+    job = redis_helper.enqueue_intersect_job(file1, file2)
+    assert job.args[0].name == file1.name
+    assert job.args[1].name == file2.name
 
 
-def test_enqueue_raster_stats_job(mock_redis, database_helper) -> None:
+def test_enqueue_raster_stats_job(redis_helper) -> None:
     """Test the RedisHelper.enqueue_raster_stats_job method."""
-    database_helper(inserted_files=2)
-    redis_helper = RedisHelper(redis_connection=mock_redis)
-    assert (
-        redis_helper.enqueue_raster_stats_job(
-            File.get(File.id == 1),
-            File.get(File.id == 2),
-            1,
-        ).func_name
-        == TaskHelper().raster_stats_task.__name__
-    )
+    file1 = File(name="name1", kind="kind1", sha256="sha2561")
+    file2 = File(name="name2", kind="kind2", sha256="sha2562")
+    job = redis_helper.enqueue_raster_stats_job(file1, file2, 1)
+    assert job.args[0].name == file1.name
+    assert job.args[1].name == file2.name
+    assert job.args[2] == 1
 
 
-def test_enqueue_remaining_job(mock_redis, database_helper) -> None:
+def test_enqueue_remaining_job(redis_helper) -> None:
     """Test the RedisHelper.enqueue_remaining_job method."""
-    database_helper(inserted_files=2, insert_intersections=True)
-    redis_helper = RedisHelper(redis_connection=mock_redis)
+    intersection = Intersection(
+        data_file_path="data_file_path", vector_file_path="vector_file_path"
+    )
     assert (
-        redis_helper.enqueue_remaining_job(
-            Intersection.get(Intersection.id == 1),
-        ).func_name
-        == TaskHelper().remaining_task.__name__
+        redis_helper.enqueue_remaining_job(intersection).args[0].data_file_path
+        == intersection.data_file_path
     )

@@ -329,8 +329,8 @@ class RedisHelper:
         """Enqueues a rasterstats job."""
         return self.queue.enqueue(
             TaskHelper().raster_stats_task,
-            vector.id,
-            raster.id,
+            vector,
+            raster,
             band,
             IOHelper().raster_stats_dir,
         )
@@ -340,7 +340,7 @@ class RedisHelper:
         """Enqueues a remaining job."""
         return self.queue.enqueue(
             TaskHelper().remaining_task,
-            intersection.id,
+            intersection,
             IOHelper().remaining_dir,
         )
 

@@ -8,7 +8,7 @@ import pytest
 from pandarus.utils.io import sha256_file
 from werkzeug.datastructures import FileStorage
 
-from pandarus_remote.helpers import DatabaseHelper, IOHelper
+from pandarus_remote.helpers import DatabaseHelper, IOHelper, RedisHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 
 
@@ -147,8 +147,8 @@ def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
 
 
 @pytest.fixture
-def mock_redis() -> Generator[fakeredis.FakeStrictRedis, None, None]:
-    """Mock the redis database."""
+def redis_helper() -> Generator[RedisHelper, None, None]:
+    """Mock the redis helper."""
     fake_redis = fakeredis.FakeStrictRedis()
-    yield fake_redis
+    yield RedisHelper(redis_connection=fake_redis)
     fake_redis.flushall()
