@@ -29,12 +29,14 @@ def loggable(func: Callable) -> Callable:
     return wrapper
 
 
-def create_if_not_exists(path_func: Callable[[Any], Path]) -> Callable[[], Path]:
+def create_if_not_exists(
+    path_func: Callable[[Tuple[Any], Dict[str, Any]], Path]
+) -> Callable[[], Path]:
     """Decorator to create a directory if it doesn't exist."""
 
-    def wrapper(instance: Any) -> Path:
+    def wrapper(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> Path:
         """Wrapper function for creating a directory if it doesn't exist."""
-        path = path_func(instance)
+        path = path_func(*args, **kwargs)
         path.mkdir(parents=True, exist_ok=True)
         return path
 

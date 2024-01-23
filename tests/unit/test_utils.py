@@ -1,9 +1,10 @@
 """Test cases for the __utils__ module."""
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
 
-from pandarus_remote.utils import loggable
+from pandarus_remote.utils import create_if_not_exists, loggable
 
 
 def test_loggable_with_arguments_and_return(caplog) -> None:
@@ -54,3 +55,14 @@ def test_loggable_with_exception(caplog) -> None:
         _exception_function()
     assert "Starting _exception_function with no arguments." in caplog.text
     assert "Exception: Test" in caplog.text
+
+
+def test_create_if_not_exists(tmp_path) -> None:
+    """Test the create_if_not_exists decorator."""
+
+    @create_if_not_exists
+    def _path_function() -> Path:
+        return tmp_path.joinpath("test")
+
+    path = _path_function()
+    assert path.exists()
