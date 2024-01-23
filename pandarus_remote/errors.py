@@ -1,5 +1,4 @@
 """Errors for the __pandarus_remote__ web service."""
-# pragma: no cover
 from typing import List
 
 
