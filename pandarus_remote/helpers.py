@@ -305,6 +305,7 @@ class RedisHelper:
         ),
     ) -> None:
         self.queue = Queue(connection=redis_connection)
+        self.job_ids_set_name = "job_ids_set"
 
     @loggable
     def get_job_status(self, job_id: str) -> Dict[str, str]:
@@ -315,9 +316,32 @@ class RedisHelper:
         raise JobNotFoundError(job_id)
 
     @loggable
+    def create_task_identifier(
+        self, func: Callable, *args: Tuple[Any], **kwargs: Dict[str, Any]
+    ) -> str:
+        """Creates a task identifier."""
+        args_str_list = list(map(str, args))
+        args_str_list.extend(list(map(str, kwargs.values())))
+        return f"{func.__name__}: {args_str_list}"
+
+    @loggable
+    def enqueue_task(
+        self, func: Callable, *args: Tuple[Any], **kwargs: Dict[str, Any]
+    ) -> Job:
+        """Enqueues a task if it doesn't already exist."""
+        identifier = self.create_task_identifier(func, args, kwargs)
+        existing_job_id = self.queue.connection.hget(self.job_ids_set_name, identifier)
+
+        if existing_job_id:
+            return self.queue.fetch_job(existing_job_id.decode("utf-8"))
+        job = self.queue.enqueue(func, *args, **kwargs)
+        self.queue.connection.hset(self.job_ids_set_name, identifier, job.id)
+        return job
+
+    @loggable
     def enqueue_intersection_job(self, file1: File, file2: File) -> Job:
         """Enqueues an intersect job."""
-        return self.queue.enqueue(
+        return self.enqueue_task(
             TaskHelper().intersect_task,
             file1,
             file2,
@@ -327,7 +351,7 @@ class RedisHelper:
     @loggable
     def enqueue_raster_stats_job(self, vector: File, raster: File, band: int) -> Job:
         """Enqueues a rasterstats job."""
-        return self.queue.enqueue(
+        return self.enqueue_task(
             TaskHelper().raster_stats_task,
             vector,
             raster,
@@ -338,7 +362,7 @@ class RedisHelper:
     @loggable
     def enqueue_remaining_job(self, intersection: Intersection) -> Job:
         """Enqueues a remaining job."""
-        return self.queue.enqueue(
+        return self.enqueue_task(
             TaskHelper().remaining_task,
             intersection,
             IOHelper().remaining_dir,

@@ -2,6 +2,7 @@
 import pytest
 
 from pandarus_remote.errors import JobNotFoundError
+from pandarus_remote.helpers import RedisHelper
 from pandarus_remote.models import File, Intersection
 
 
@@ -19,6 +20,82 @@ def test_get_job_status_exists(redis_helper) -> None:
         "status": "queued",
         "result": None,
     }
+
+
+def test_create_task_identifier(redis_helper) -> None:
+    """Test the RedisHelper.create_task_identifier method."""
+
+    def _test_func():
+        pass
+
+    assert (
+        redis_helper.create_task_identifier(
+            _test_func,
+            "test_arg1",
+            "test_arg2",
+            test_arg3="test_arg3",
+            test_arg4="test_arg4",
+        )
+        == f"""{_test_func.__name__}: """
+        """['test_arg1', 'test_arg2', 'test_arg3', 'test_arg4']"""
+    )
+
+
+def test_enqueue_task_task_does_not_exist(redis_helper, monkeypatch) -> None:
+    """Test the RedisHelper.enqueue_task method but task doesn't exist."""
+    monkeypatch.setattr(
+        RedisHelper, "create_task_identifier", lambda *_, **__: "test_identifier"
+    )
+
+    def _test_func():
+        pass
+
+    identifier = redis_helper.create_task_identifier(
+        _test_func, "test_arg1", "test_arg2"
+    )
+    assert (
+        redis_helper.queue.connection.hget(redis_helper.job_ids_set_name, identifier)
+        is None
+    )
+
+    job = redis_helper.enqueue_task(_test_func, "test_arg1", "test_arg2")
+    assert _test_func.__name__ in job.func_name
+    assert job.args == ("test_arg1", "test_arg2")
+    assert (
+        redis_helper.queue.connection.hget(
+            redis_helper.job_ids_set_name, identifier
+        ).decode("UTF-8")
+        == job.id
+    )
+
+
+def test_enqueue_task_task_exists(redis_helper, monkeypatch) -> None:
+    """Test the RedisHelper.enqueue_task method and task exists."""
+    monkeypatch.setattr(
+        RedisHelper, "create_task_identifier", lambda *_, **__: "test_identifier"
+    )
+
+    def _test_func():
+        pass
+
+    expected_job = redis_helper.queue.enqueue(lambda: None)
+    identifier = redis_helper.create_task_identifier(
+        _test_func, "test_arg1", "test_arg2"
+    )
+    redis_helper.queue.connection.hset(
+        redis_helper.job_ids_set_name, identifier, expected_job.id
+    )
+    assert (
+        redis_helper.queue.connection.hget(
+            redis_helper.job_ids_set_name, identifier
+        ).decode("UTF-8")
+        == expected_job.id
+    )
+
+    actual_job = redis_helper.enqueue_task(_test_func, "test_arg1", "test_arg2")
+    assert actual_job.id == expected_job.id
+    assert actual_job.func_name == expected_job.func_name
+    assert actual_job.args == expected_job.args
 
 
 def test_enqueue_interesect_job(redis_helper) -> None:
