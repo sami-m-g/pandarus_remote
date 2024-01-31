@@ -18,7 +18,7 @@ from .helpers import DatabaseHelper, IOHelper, RedisHelper
 from .utils import calculate_endpoint, get_calculation_endpoint
 from .version import __version__
 
-routes_blueprint = Blueprint("bp", __name__)
+routes_blueprint = Blueprint("routes_blueprint", __name__)
 
 
 @routes_blueprint.route("/")
@@ -96,12 +96,12 @@ def upload() -> Response:
             file=request.files["file"],
             name=request.form["name"],
             file_hash=request.form["sha256"],
-            layer=request.form["layer"],
-            field=request.form["field"],
-            band=request.form["band"],
+            layer=request.form.get("layer", None),
+            field=request.form.get("field", None),
+            band=request.form.get("band", None),
         )
         DatabaseHelper().add_uploaded_file(file)
-        return {"filen_name": file.name, "sha256": file.sha256}, HTTPStatus.OK
+        return {"file_name": file.name, "file_sha256": file.sha256}, HTTPStatus.OK
     except InvalidSpatialDatasetError as isde:
         return {"error": str(isde)}, HTTPStatus.UNPROCESSABLE_ENTITY
     except NoneReproducibleHashError as nrhe:
@@ -123,10 +123,9 @@ def calculate_intersection() -> str:
     if file1_hash == file2_hash:
         raise IntersectionWithSelfError(file1_hash)
 
-    intersection = DatabaseHelper().get_intersection(
+    file1, file2 = DatabaseHelper().get_intersection(
         file1_hash, file2_hash, should_exist=False
     )
-    file1, file2 = intersection.first_file, intersection.second_file
     if file1.kind != "vector" or file2.kind != "vector":
         raise InvalidIntersectionFileTypesError(
             file1_hash, file1.kind, file2_hash, file2.kind
@@ -146,10 +145,9 @@ def calculate_rasterstats() -> str:
     vector_hash = request.form["vector"]
     raster_hash = request.form["raster"]
 
-    raster_stats = DatabaseHelper().get_raster_stats(
+    vector, raster = DatabaseHelper().get_raster_stats(
         vector_hash, raster_hash, should_exist=False
     )
-    vector, raster = raster_stats.vector, raster_stats.raster
     if vector.kind != "vector" or raster.kind != "raster":
         raise InvalidRasterstatsFileTypesError(
             vector.sha256, vector.kind, raster.sha256, raster.kind

@@ -51,7 +51,7 @@ class IOHelper:
         uploads_sub_dir: str = "uploads",
         intersections_sub_dir: str = "intersections",
         raster_stats_sub_dir: str = "raster_stats",
-        remaining_sub_dir: str = "remaining",
+        remaining_sub_dir: str = "remainings",
     ) -> None:
         self.app_name = app_name
         self.app_author = app_author
@@ -156,20 +156,31 @@ class DatabaseHelper:
         self,
         database: str = IOHelper().data_dir / "pandarus_remote.db",
     ) -> None:
-        self._database = SqliteDatabase(database)
-        self._database.bind([File, Intersection, RasterStats, Remaining])
-        self._database.create_tables([File, Intersection, RasterStats, Remaining])
+        if "_database" not in self.__dict__:
+            self._database = SqliteDatabase(database)
+            self._database.bind([File, Intersection, RasterStats, Remaining])
+            self._database.create_tables([File, Intersection, RasterStats, Remaining])
 
     @property
     def files(self) -> List[Tuple[str, str, str]]:
         """Return a list of files."""
-        return [(obj.name, obj.kind, obj.sha256) for obj in File.select()]
+        return [
+            {
+                "name": obj.name,
+                "kind": obj.kind,
+                "sha256": obj.sha256,
+            }
+            for obj in File.select()
+        ]
 
     @property
     def intersections(self) -> List[Tuple[str, str]]:
         """Return a list of intersections."""
         return [
-            (obj.first_file.sha256, obj.second_file.sha256)
+            {
+                "first_file_sha256": obj.first_file.sha256,
+                "second_file_sha256": obj.second_file.sha256,
+            }
             for obj in Intersection.select()
         ]
 
@@ -177,7 +188,10 @@ class DatabaseHelper:
     def remaining(self) -> List[Tuple[str, str]]:
         """Return a list of remaining."""
         return [
-            (obj.intersection.first_file.sha256, obj.intersection.second_file.sha256)
+            {
+                "first_file_sha256": obj.intersection.first_file.sha256,
+                "second_file_sha256": obj.intersection.second_file.sha256,
+            }
             for obj in Remaining.select()
         ]
 
@@ -185,7 +199,10 @@ class DatabaseHelper:
     def raster_stats(self) -> List[Tuple[str, str]]:
         """Return a list of raster_stats."""
         return [
-            (obj.vector_file.sha256, obj.raster_file.sha256)
+            {
+                "vector_sha256": obj.vector_file.sha256,
+                "raster_sha256": obj.raster_file.sha256,
+            }
             for obj in RasterStats.select()
         ]
 
@@ -195,7 +212,7 @@ class DatabaseHelper:
         return {
             "files": self.files,
             "intersections": self.intersections,
-            "remaining": self.remaining,
+            "remainings": self.remaining,
             "raster_stats": self.raster_stats,
         }
 
@@ -304,8 +321,9 @@ class RedisHelper:
             db=0,
         ),
     ) -> None:
-        self.queue = Queue(connection=redis_connection)
-        self.job_ids_set_name = "job_ids_set"
+        if "queue" not in self.__dict__:
+            self.queue = Queue(connection=redis_connection)
+            self.job_ids_set_name = "job_ids_set"
 
     @loggable
     def get_job_status(self, job_id: str) -> Dict[str, str]:
@@ -345,7 +363,6 @@ class RedisHelper:
             TaskHelper().intersect_task,
             file1,
             file2,
-            IOHelper().intersections_dir,
         )
 
     @loggable
@@ -356,7 +373,6 @@ class RedisHelper:
             vector,
             raster,
             band,
-            IOHelper().raster_stats_dir,
         )
 
     @loggable
@@ -365,7 +381,6 @@ class RedisHelper:
         return self.enqueue_task(
             TaskHelper().remaining_task,
             intersection,
-            IOHelper().remaining_dir,
         )
 
 
@@ -450,11 +465,13 @@ class TaskHelper:
     @loggable
     def raster_stats_task(self, vector: File, raster: File, raster_band: int) -> None:
         """Task to compute raster statistics."""
+        output_file_name = f"{vector.sha256}-{raster.sha256}-{raster_band}.json"
+        output_file_path = str(IOHelper().raster_stats_dir / output_file_name)
         raster_stats_path = raster_statistics(
             vector.file_path,
             vector.field,
             raster.file_path,
-            output_file_path=IOHelper().raster_stats_dir,
+            output_file_path=output_file_path,
             band=raster_band,
         )
         RasterStats(

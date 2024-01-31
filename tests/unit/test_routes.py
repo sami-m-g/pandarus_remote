@@ -27,15 +27,6 @@ class _MockJob:  # pylint: disable=too-few-public-methods
         self.id = job_id
 
 
-class _MockIntersection:  # pylint: disable=too-few-public-methods
-    """Mock the Intersection class."""
-
-    def __init__(self, first: File, second: File) -> None:
-        """Initialize the class."""
-        self.first_file = first
-        self.second_file = second
-
-
 def test_index(client) -> None:
     """Test that the index page is called correctly."""
     response = client.get("/")
@@ -48,7 +39,7 @@ def test_catalog(client, monkeypatch) -> None:
     catalog = {
         "files": [],
         "intersections": [],
-        "remaining": [],
+        "remainings": [],
         "raster_stats": [],
     }
     monkeypatch.setattr(DatabaseHelper, "catalog", catalog)
@@ -143,7 +134,7 @@ def test_upload(client, monkeypatch, mock_uploaded_file) -> None:
         },
     )
     assert response.status_code == HTTPStatus.OK
-    assert response.json == {"filen_name": file.name, "sha256": file.sha256}
+    assert response.json == {"file_name": file.name, "file_sha256": file.sha256}
 
 
 def test_upload_invalid_spatial_dataset(
@@ -254,7 +245,7 @@ def test_calcculate_intersection(client, monkeypatch) -> None:
     monkeypatch.setattr(
         DatabaseHelper,
         "get_intersection",
-        lambda *_, **__: _MockIntersection(vector, raster),
+        lambda *_, **__: (vector, raster),
     )
     monkeypatch.setattr(
         RedisHelper, "enqueue_intersection_job", lambda *_, **__: _MockJob(job_id)
@@ -298,7 +289,7 @@ def test_calculate_intersection_with_invalid_intersection_file_types(
     monkeypatch.setattr(
         DatabaseHelper,
         "get_intersection",
-        lambda *_, **__: _MockIntersection(vector, raster),
+        lambda *_, **__: (vector, raster),
     )
     monkeypatch.setattr(RedisHelper, "enqueue_intersection_job", lambda *_, **__: None)
 
@@ -335,7 +326,7 @@ def test_calculate_intersection_with_invalid_intersection_geometry_type(
     monkeypatch.setattr(
         DatabaseHelper,
         "get_intersection",
-        lambda *_, **__: _MockIntersection(vector, raster),
+        lambda *_, **__: (vector, raster),
     )
     monkeypatch.setattr(RedisHelper, "enqueue_intersection_job", lambda *_, **__: None)
 
@@ -352,11 +343,8 @@ def test_calculate_rastert_stats(client, monkeypatch) -> None:
     job_id = "job_id"
     vector = File(name="name1", kind="vector", sha256="sha2561", file_path="file_path1")
     raster = File(name="name2", kind="raster", sha256="sha2562", file_path="file_path2")
-    raster_stats = RasterStats(
-        vector=vector, raster=raster, output_file_path="output_path"
-    )
     monkeypatch.setattr(
-        DatabaseHelper, "get_raster_stats", lambda *_, **__: raster_stats
+        DatabaseHelper, "get_raster_stats", lambda *_, **__: (vector, raster)
     )
     monkeypatch.setattr(
         RedisHelper, "enqueue_raster_stats_job", lambda *_, **__: _MockJob(job_id)
@@ -365,10 +353,10 @@ def test_calculate_rastert_stats(client, monkeypatch) -> None:
 
     response = client.post(
         "/calculate_raster_stats",
-        data={"vector": vector.sha256, "raster": raster.sha256},
+        data={"vector": vector.sha256, "raster": raster.sha256, "field": "name"},
     )
-    assert response.status_code == HTTPStatus.ACCEPTED
     assert f"/status/{job_id}" in response.data.decode()
+    assert response.status_code == HTTPStatus.ACCEPTED
 
 
 def test_calculate_raster_stats_invalid_rasterstats_file_types(
@@ -378,14 +366,11 @@ def test_calculate_raster_stats_invalid_rasterstats_file_types(
     InvalidRasterstatsFileTypesError."""
     vector = File(name="name1", kind="raster", sha256="sha2561", file_path="file_path1")
     raster = File(name="name2", kind="vector", sha256="sha2562", file_path="file_path2")
-    raster_stats = RasterStats(
-        vector=vector, raster=raster, output_file_path="output_path"
-    )
     error = InvalidRasterstatsFileTypesError(
         vector.sha256, vector.kind, raster.sha256, raster.kind
     )
     monkeypatch.setattr(
-        DatabaseHelper, "get_raster_stats", lambda *_, **__: raster_stats
+        DatabaseHelper, "get_raster_stats", lambda *_, **__: (vector, raster)
     )
     monkeypatch.setattr(RedisHelper, "enqueue_raster_stats_job", lambda *_, **__: None)
     monkeypatch.setattr("flask.send_file", lambda *_, **__: None)
@@ -394,8 +379,8 @@ def test_calculate_raster_stats_invalid_rasterstats_file_types(
         "/calculate_raster_stats",
         data={"vector": vector.sha256, "raster": raster.sha256},
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
     assert response.json == {"error": str(error)}
+    assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
 def test_calculate_remaining(client, monkeypatch) -> None:

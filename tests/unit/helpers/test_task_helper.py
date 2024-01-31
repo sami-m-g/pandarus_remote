@@ -2,7 +2,7 @@
 from pandarus_remote.helpers import TaskHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 
-from ... import FILE_VECTOR
+from ... import FILE_VECTOR1
 
 
 def test_n_cpu_default() -> None:
@@ -31,7 +31,7 @@ def test_intersect_task(monkeypatch, database_helper) -> None:
     """Test that the intersect_task runs correctly."""
     monkeypatch.setattr(
         "pandarus_remote.helpers.intersect",
-        lambda *_, **__: (FILE_VECTOR, "data_path"),
+        lambda *_, **__: (FILE_VECTOR1, "data_path"),
     )
     monkeypatch.setattr(
         "pandarus_remote.helpers.intersections_from_intersection",
@@ -46,7 +46,7 @@ def test_intersect_task(monkeypatch, database_helper) -> None:
     assert Intersection.select().first(None).first_file.id == 1
     assert Intersection.select().first(None).second_file.id == 2
     assert Intersection.select().first(None).data_file_path == "data_path"
-    assert Intersection.select().first(None).vector_file_path == str(FILE_VECTOR)
+    assert Intersection.select().first(None).vector_file_path == str(FILE_VECTOR1)
 
 
 def test_raster_stats_task(monkeypatch, database_helper) -> None:

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Callable, Generator, Tuple
 
 import appdirs
-import fakeredis
 import pytest
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
@@ -49,8 +48,18 @@ def assert_upload_file(
     return _assert_upload_file
 
 
+def cleanup_databse() -> None:
+    """Cleanup the database."""
+    File.delete().execute(None)
+    Intersection.delete().execute(None)
+    RasterStats.delete().execute(None)
+    Remaining.delete().execute(None)
+
+
 @pytest.fixture
-def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
+def database_helper() -> Callable[
+    [bool, bool, bool, bool], Generator[DatabaseHelper, None, None]
+]:
     """Mock a temporary in-memory database and return a DatabaseHelper.
     If insert_files is True, insert two files. If insert_intersections is True,
     insert two intersections. If insert_raster_stats is True, insert two
@@ -135,23 +144,35 @@ def database_helper() -> Callable[[bool, bool, bool, bool], DatabaseHelper]:
             ).execute(None)
         return helper
 
-    return wrapper
+    yield wrapper
+    cleanup_databse()
 
 
 @pytest.fixture
-def redis_helper() -> Generator[RedisHelper, None, None]:
+def redis_helper(redisdb) -> Generator[RedisHelper, None, None]:
     """Mock the RedisHelper."""
-    fake_redis = fakeredis.FakeStrictRedis()
-    yield RedisHelper(redis_connection=fake_redis)
-    fake_redis.flushall()
+    yield RedisHelper(redis_connection=redisdb)
+    redisdb.flushall()
 
 
 @pytest.fixture
-def client() -> Generator[FlaskClient, None, None]:
+def client(
+    monkeypatch,  # pylint: disable=redefined-outer-name
+    tmp_path,
+    redisdb,
+) -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
+    monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: tmp_path / "data")
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "data")
+    DatabaseHelper(":memory:")
+    RedisHelper(redisdb)
+
     app = create_app()
     with app.test_client() as test_client:
+        app.testing = True
         yield test_client
+    cleanup_databse()
+    redisdb.flushall()
 
 
 @pytest.fixture

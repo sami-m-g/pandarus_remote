@@ -14,8 +14,16 @@ def test_files(database_helper) -> None:
     assert database_helper().files == []
 
     assert database_helper(inserted_files=2).files == [
-        ("name1", "kind1", "sha2561"),
-        ("name2", "kind2", "sha2562"),
+        {
+            "name": "name1",
+            "kind": "kind1",
+            "sha256": "sha2561",
+        },
+        {
+            "name": "name2",
+            "kind": "kind2",
+            "sha256": "sha2562",
+        },
     ]
 
 
@@ -26,8 +34,14 @@ def test_intersections(database_helper) -> None:
     assert database_helper(
         inserted_files=2, insert_intersections=True
     ).intersections == [
-        ("sha2561", "sha2562"),
-        ("sha2562", "sha2561"),
+        {
+            "first_file_sha256": "sha2561",
+            "second_file_sha256": "sha2562",
+        },
+        {
+            "first_file_sha256": "sha2562",
+            "second_file_sha256": "sha2561",
+        },
     ]
 
 
@@ -39,8 +53,14 @@ def test_raster_stats(database_helper) -> None:
         inserted_files=2, insert_intersections=True, insert_raster_stats=True
     )
     assert helper.raster_stats == [
-        ("sha2561", "sha2562"),
-        ("sha2562", "sha2561"),
+        {
+            "vector_sha256": "sha2561",
+            "raster_sha256": "sha2562",
+        },
+        {
+            "vector_sha256": "sha2562",
+            "raster_sha256": "sha2561",
+        },
     ]
 
 
@@ -51,8 +71,14 @@ def test_remaining(database_helper) -> None:
     assert database_helper(
         inserted_files=2, insert_intersections=True, insert_remaining=True
     ).remaining == [
-        ("sha2561", "sha2562"),
-        ("sha2562", "sha2561"),
+        {
+            "first_file_sha256": "sha2561",
+            "second_file_sha256": "sha2562",
+        },
+        {
+            "first_file_sha256": "sha2562",
+            "second_file_sha256": "sha2561",
+        },
     ]
 
 
@@ -62,7 +88,7 @@ def test_catalog(database_helper) -> None:
         "files": [],
         "intersections": [],
         "raster_stats": [],
-        "remaining": [],
+        "remainings": [],
     }
 
     helper = database_helper(
@@ -73,20 +99,46 @@ def test_catalog(database_helper) -> None:
     )
     assert helper.catalog == {
         "files": [
-            ("name1", "kind1", "sha2561"),
-            ("name2", "kind2", "sha2562"),
+            {
+                "name": "name1",
+                "kind": "kind1",
+                "sha256": "sha2561",
+            },
+            {
+                "name": "name2",
+                "kind": "kind2",
+                "sha256": "sha2562",
+            },
         ],
         "intersections": [
-            ("sha2561", "sha2562"),
-            ("sha2562", "sha2561"),
+            {
+                "first_file_sha256": "sha2561",
+                "second_file_sha256": "sha2562",
+            },
+            {
+                "first_file_sha256": "sha2562",
+                "second_file_sha256": "sha2561",
+            },
         ],
         "raster_stats": [
-            ("sha2561", "sha2562"),
-            ("sha2562", "sha2561"),
+            {
+                "vector_sha256": "sha2561",
+                "raster_sha256": "sha2562",
+            },
+            {
+                "vector_sha256": "sha2562",
+                "raster_sha256": "sha2561",
+            },
         ],
-        "remaining": [
-            ("sha2561", "sha2562"),
-            ("sha2562", "sha2561"),
+        "remainings": [
+            {
+                "first_file_sha256": "sha2561",
+                "second_file_sha256": "sha2562",
+            },
+            {
+                "first_file_sha256": "sha2562",
+                "second_file_sha256": "sha2561",
+            },
         ],
     }
 

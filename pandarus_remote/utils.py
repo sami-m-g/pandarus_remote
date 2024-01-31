@@ -96,7 +96,10 @@ def calculate_endpoint(
         """Wrapper function for calculate endpoints."""
         try:
             job_id = calculation_function()
-            return url_for("bp.status", job_id=job_id), HTTPStatus.ACCEPTED
+            return (
+                url_for("routes_blueprint.status", job_id=job_id),
+                HTTPStatus.ACCEPTED,
+            )
         except NoEntryFoundError as nefe:
             return {"error": str(nefe)}, HTTPStatus.NOT_FOUND
         except ResultAlreadyExistsError as raee:

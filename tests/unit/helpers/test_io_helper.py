@@ -3,7 +3,7 @@ import pytest
 
 from pandarus_remote.errors import InvalidSpatialDatasetError, NoneReproducibleHashError
 
-from ... import FILE_RASTER, FILE_TEXT, FILE_VECTOR
+from ... import FILE_RASTER, FILE_TEXT, FILE_VECTOR1
 
 
 def test_data_dir(io_helper) -> None:
@@ -38,7 +38,7 @@ def test_remaining_dir(io_helper) -> None:
 
 def test_save_uploaded_file_vector(assert_upload_file) -> None:
     """Test the IOHelper.save_uploaded_file method with vector input."""
-    assert_upload_file(FILE_VECTOR)
+    assert_upload_file(FILE_VECTOR1)
 
 
 def test_save_uploaded_file_raster(assert_upload_file) -> None:

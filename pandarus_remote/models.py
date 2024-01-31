@@ -1,6 +1,6 @@
 """Models for the __pandarus_remote__ web service."""
 # pylint: disable=too-few-public-methods``
-from peewee import AutoField, ForeignKeyField, IntegerField, Model, TextField
+from peewee import AutoField, CharField, ForeignKeyField, IntegerField, Model, TextField
 
 
 class BaseModel(Model):
@@ -10,15 +10,17 @@ class BaseModel(Model):
 class File(BaseModel):
     """Model for a file in the database."""
 
+    KIND_CHOICES = ["vector", "raster", "unkown"]
+
     id = AutoField(primary_key=True)
-    name = TextField()
-    kind = TextField()
-    sha256 = TextField(unique=True)
+    name = CharField()
+    kind = CharField(choices=KIND_CHOICES)
+    sha256 = CharField(unique=True)
     file_path = TextField()
     band = IntegerField(null=True)
-    layer = TextField(null=True)
-    field = TextField(null=True)
-    geometry_type = TextField(null=True)
+    layer = CharField(null=True)
+    field = CharField(null=True)
+    geometry_type = CharField(null=True)
 
 
 class Intersection(BaseModel):
