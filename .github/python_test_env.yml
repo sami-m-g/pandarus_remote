@@ -5,3 +5,4 @@ dependencies:
   - gdal
   - geos
   - fiona
+  - redis-server
