@@ -162,6 +162,7 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
 def client(redisdb) -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
     IOHelper("test_pandarus_remote", "test_pandarus_remote")
+    DatabaseHelper(":memory:")
     RedisHelper(redis_connection=redisdb)
     app = create_app()
     with app.test_client() as test_client:
