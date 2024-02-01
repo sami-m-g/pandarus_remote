@@ -1,4 +1,5 @@
 """Test suite for the __pandarus_remote__ package."""
+import shutil
 from functools import wraps
 from io import BytesIO
 from pathlib import Path
@@ -158,13 +159,9 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
 
 
 @pytest.fixture
-def client(
-    monkeypatch,  # pylint: disable=redefined-outer-name
-    tmp_path,
-) -> Generator[FlaskClient, None, None]:
+def client() -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
-    monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: tmp_path / "data")
-    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "data")
+    IOHelper("test_pandarus_remote", "test_pandarus_remote")
     DatabaseHelper(":memory:")
     fake_redis = FakeStrictRedis()
     RedisHelper(fake_redis)
@@ -173,6 +170,8 @@ def client(
     with app.test_client() as test_client:
         app.testing = True
         yield test_client
+    shutil.rmtree(IOHelper().data_dir)
+    shutil.rmtree(IOHelper().logs_dir)
     cleanup_databse()
     fake_redis.flushall()
 
