@@ -20,6 +20,7 @@ from .utils import check_catalog, run_calculation, upload_file
 @pytest.mark.filterwarnings(
     "ignore:The `pop_connection` function is deprecated.*:DeprecationWarning",
     "ignore:The `push_connection` function is deprecated.*:DeprecationWarning",
+    "ignore:CLIENT SETNAME command not supported.*:Warning",
 )
 def test_job_life_cycle(client, tmpdir) -> None:
     """Test the job life cycle."""

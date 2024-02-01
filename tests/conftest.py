@@ -6,6 +6,7 @@ from typing import Callable, Generator, Tuple
 
 import appdirs
 import pytest
+from fakeredis import FakeStrictRedis
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
 from werkzeug.datastructures import FileStorage
@@ -149,30 +150,31 @@ def database_helper() -> Callable[
 
 
 @pytest.fixture
-def redis_helper(redisdb) -> Generator[RedisHelper, None, None]:
+def redis_helper() -> Generator[RedisHelper, None, None]:
     """Mock the RedisHelper."""
-    yield RedisHelper(redis_connection=redisdb)
-    redisdb.flushall()
+    fake_redis = FakeStrictRedis()
+    yield RedisHelper(redis_connection=fake_redis)
+    fake_redis.flushall()
 
 
 @pytest.fixture
 def client(
     monkeypatch,  # pylint: disable=redefined-outer-name
     tmp_path,
-    redisdb,
 ) -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
     monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: tmp_path / "data")
     monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "data")
     DatabaseHelper(":memory:")
-    RedisHelper(redisdb)
+    fake_redis = FakeStrictRedis()
+    RedisHelper(fake_redis)
 
     app = create_app()
     with app.test_client() as test_client:
         app.testing = True
         yield test_client
     cleanup_databse()
-    redisdb.flushall()
+    fake_redis.flushall()
 
 
 @pytest.fixture
