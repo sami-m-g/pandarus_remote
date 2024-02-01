@@ -101,3 +101,20 @@ def test_job_life_cycle(client, tmpdir) -> None:
         "intersection",
         catalog,
     )
+
+    # 7. Run a calculation(remaining).
+    catalog["remainings"].append(
+        {
+            "first_file_sha256": vector1_sha256,
+            "second_file_sha256": vector2_sha256,
+        }
+    )
+    run_calculation(
+        client,
+        {
+            "first": vector1_sha256,
+            "second": vector2_sha256,
+        },
+        "remaining",
+        catalog,
+    )

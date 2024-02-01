@@ -225,7 +225,8 @@ class DatabaseHelper:
         should_exist: bool = True,
     ) -> Union[BaseModel, Tuple[File, File]]:
         """Check if the file1_hash and file2_hash are valid. Raises QueryError if not.
-        Returns the result_table entry if it exists and should_exist is True."""
+        Returns the result_table entry if it exists and should_exist is True else
+        returns Files for file1_hash and file2_hash if exist."""
         if not File.select().where(File.sha256 == file1_hash).exists():
             raise NoEntryFoundError([file1_hash])
         file1 = File.get(File.sha256 == file1_hash)
@@ -248,10 +249,11 @@ class DatabaseHelper:
     @loggable
     def get_raster_stats(
         self, vector_sha256: str, raster_sha256: str, should_exist: bool = True
-    ) -> RasterStats:
-        """Returns a raster_stats ouput path. Raises QueryError if the vector_sha256 or
-        raster_sha256 are not found or RasterStats with vector_sha256 and raster_sha256
-        combination doesn't exist."""
+    ) -> Union[RasterStats, Tuple[File, File]]:
+        """Returns a RasterStats if exists and should_exist else Files for vector_sha256
+        and raster_sha256. Raises QueryError if the vector_sha256 or raster_sha256 are
+        are not found or RasterStats with vector_sha256 and raster_sha256 combination
+        doesn't exist."""
         return self.validate_query(
             vector_sha256,
             raster_sha256,
@@ -265,10 +267,11 @@ class DatabaseHelper:
     @loggable
     def get_intersection(
         self, file1_sha256: str, file2_sha256: str, should_exist: bool = True
-    ) -> Intersection:
-        """Return an intersection. Raises QueryError if the file1_sha256 or file2_sha256
-        are not found or Intersection with file1_sha256 and file2_sha256 combination
-        doesn't exist."""
+    ) -> Union[Intersection, Tuple[File, File]]:
+        """Return an Intersection if exists and should_exist else Files for
+        vector_sha256 and raster_sha256. Raises QueryError if the file1_sha256
+        or file2_sha256 are not found or Intersection with file1_sha256 and
+        file2_sha256 combination doesn't exist."""
         return self.validate_query(
             file1_sha256,
             file2_sha256,
@@ -282,17 +285,23 @@ class DatabaseHelper:
     @loggable
     def get_remaining(
         self, file1_sha256: str, file2_sha256: str, should_exist: bool = True
-    ) -> Remaining:
-        """Return a remaining for file1_d and file2_d. Raises QueryError if the
-        file1_sha256 or file2_sha256 are not found or Remaining with file1_sha256
+    ) -> Union[Remaining, Tuple[File, File]]:
+        """Return a Remaining for file1_d and file2_d if exists and should_exist
+        else Intersection.id for file1_sha256 and file2_sha256. Raises QueryError
+        if the file1_sha256 or file2_sha256 are not found or Remaining with file1_sha256
         and file2_sha256 combination doesn't exist."""
         intersection_id = self.get_intersection(
-            file1_sha256, file2_sha256, should_exist
+            file1_sha256, file2_sha256, should_exist=True
         ).id
         try:
-            return Remaining.get(Remaining.intersection == intersection_id)
+            remaining = Remaining.get(Remaining.intersection == intersection_id)
+            if not should_exist:
+                raise ResultAlreadyExistsError([file1_sha256, file2_sha256])
+            return remaining
         except DoesNotExist as dne:
-            raise NoEntryFoundError([intersection_id]) from dne
+            if should_exist:
+                raise NoEntryFoundError([file1_sha256, file2_sha256]) from dne
+        return intersection_id
 
     @loggable
     def add_uploaded_file(self, file: File) -> None:

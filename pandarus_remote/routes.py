@@ -162,7 +162,7 @@ def calculate_remaining() -> str:
     Both spatial datasets should already be on the server (see ``/upload``)."""
     first_hash = request.form["first"]
     second_hash = request.form["second"]
-    remaining = DatabaseHelper().get_remaining(
+    intersection_id = DatabaseHelper().get_remaining(
         first_hash, second_hash, should_exist=False
     )
-    return RedisHelper().enqueue_remaining_job(remaining.intersection.id).id
+    return RedisHelper().enqueue_remaining_job(intersection_id).id
