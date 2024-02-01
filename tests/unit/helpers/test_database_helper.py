@@ -245,25 +245,46 @@ def test_get_intersection(database_helper) -> None:
     )
 
 
-def test_get_remaining_exists(database_helper) -> None:
-    """Test the DatabaseHelper.get_remaining method and results exists."""
+def test_get_remaining_exists_should_exist(database_helper) -> None:
+    """Test the DatabaseHelper.get_remaining method with result exists and
+    should exist."""
     assert (
         database_helper(
             inserted_files=2, insert_intersections=True, insert_remaining=True
         )
-        .get_remaining("sha2561", "sha2562")
+        .get_remaining("sha2561", "sha2562", should_exist=True)
         .data_file_path
         == "data_path1"
     )
 
 
-def test_get_remaining_not_exists(database_helper) -> None:
-    """Test the DatabaseHelper.get_remaining method and result doesn't exist."""
+def test_get_remaining_exists_should_not_exist(database_helper) -> None:
+    """Test the DatabaseHelper.get_remaining method with result exists and
+    should not exist."""
+    with pytest.raises(ResultAlreadyExistsError) as rae:
+        database_helper(
+            inserted_files=2, insert_intersections=True, insert_remaining=True
+        ).get_remaining("sha2561", "sha2562", should_exist=False)
+        assert "[sha2561]" in str(rae)
+
+
+def test_get_remaining_not_exists_should_exist(database_helper) -> None:
+    """Test the DatabaseHelper.get_remaining method with result not exists and
+    should exist."""
     with pytest.raises(NoEntryFoundError) as nefe:
         database_helper(inserted_files=2, insert_intersections=True).get_remaining(
-            "sha2561", "sha2562"
+            "sha2561", "sha2562", should_exist=True
         )
         assert "[sha2561]" in str(nefe)
+
+
+def test_get_remaining_not_exists_should_not_exist(database_helper) -> None:
+    """Test the DatabaseHelper.get_remaining method with result exists and
+    should exist."""
+    intersection_id = database_helper(
+        inserted_files=2, insert_intersections=True, insert_remaining=False
+    ).get_remaining("sha2561", "sha2562", should_exist=False)
+    assert intersection_id == 1
 
 
 def test_add_uploaded_file_not_exists(database_helper) -> None:
