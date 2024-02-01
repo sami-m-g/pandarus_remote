@@ -21,7 +21,7 @@ from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 def io_helper(tmp_path, monkeypatch) -> Generator[IOHelper, None, None]:
     """Mock the IOHelper."""
     monkeypatch.setattr(appdirs, "user_data_dir", lambda *_, **__: tmp_path / "data")
-    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "data")
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda *_, **__: tmp_path / "logs")
     yield IOHelper("test_pandarus_remote", "test_pandarus_remote")
 
 
