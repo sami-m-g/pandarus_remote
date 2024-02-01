@@ -159,21 +159,16 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
 
 
 @pytest.fixture
-def client() -> Generator[FlaskClient, None, None]:
+def client(redisdb) -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
     IOHelper("test_pandarus_remote", "test_pandarus_remote")
-    DatabaseHelper(":memory:")
-    fake_redis = FakeStrictRedis()
-    RedisHelper(fake_redis)
-
+    RedisHelper(redis_connection=redisdb)
     app = create_app()
     with app.test_client() as test_client:
         app.testing = True
         yield test_client
     shutil.rmtree(IOHelper().data_dir)
     shutil.rmtree(IOHelper().logs_dir)
-    cleanup_databse()
-    fake_redis.flushall()
 
 
 @pytest.fixture
