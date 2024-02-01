@@ -67,6 +67,7 @@ def test_job_life_cycle(client, tmpdir) -> None:
         FILE_VECTOR2,
         "name",
         out_dir=tmpdir,
+        log_dir=tmpdir,
     )
     intersection_sha256 = sha256_file(intersection_path)
     catalog["files"].append(
