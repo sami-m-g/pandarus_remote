@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
-from rq import Worker
+from rq import SimpleWorker
 
 from pandarus_remote.errors import NoEntryFoundError, ResultAlreadyExistsError
 from pandarus_remote.helpers import RedisHelper
@@ -103,7 +103,7 @@ def run_calculation(
     assert new_job_id == job_id, new_job_id
 
     # 5. Check the job status is finished.
-    Worker(
+    SimpleWorker(
         connection=RedisHelper().queue.connection,
         queues=[RedisHelper().queue],
     ).work(burst=True)
