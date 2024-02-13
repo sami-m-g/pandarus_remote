@@ -18,8 +18,8 @@ def check_catalog(
 ) -> None:
     """Check the catalog against a reference."""
     response = client_app.get("/catalog")
-    assert response.json == catalog
-    assert response.status_code == HTTPStatus.OK
+    assert response.json == catalog, response.json
+    assert response.status_code == HTTPStatus.OK, response.status_code
 
 
 def upload_file(
@@ -83,24 +83,24 @@ def run_calculation(
 
     # 1. Get the non-existing calculation of 2 files.
     response = client_app.post(calculation, data=data)
-    assert response.json == {"error": str(NoEntryFoundError(files))}
-    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json == {"error": str(NoEntryFoundError(files))}, response.json
+    assert response.status_code == HTTPStatus.NOT_FOUND, response.status_code
 
     # 2. Create a job to calculate the calculation.
     response = client_app.post(calc_endpoint, data=data)
-    assert response.status_code == HTTPStatus.ACCEPTED
+    assert response.status_code == HTTPStatus.ACCEPTED, response.status_code
 
     # 3. Check the job status is running.
     job_id = response.data.decode().split("/")[-1]
     response = client_app.get(f"/status/{job_id}")
-    assert response.json["status"] == "queued"
-    assert response.status_code == HTTPStatus.OK
+    assert response.json["status"] == "queued", response.json["status"]
+    assert response.status_code == HTTPStatus.OK, response.status_code
 
     # 4. Try to calculate the calculation again.
     response = client_app.post(calc_endpoint, data=data)
     new_job_id = response.data.decode().split("/")[-1]
-    assert response.status_code == HTTPStatus.ACCEPTED
-    assert new_job_id == job_id
+    assert response.status_code == HTTPStatus.ACCEPTED, response.status_code
+    assert new_job_id == job_id, new_job_id
 
     # 5. Check the job status is finished.
     Worker(
@@ -109,17 +109,19 @@ def run_calculation(
     ).work(burst=True)
     response = client_app.get(f"/status/{job_id}")
     # Doesn't work on GitHub Actions.
-    # assert response.json["status"] == "finished"
-    assert response.status_code == HTTPStatus.OK
+    # assert response.json["status"] == "finished", response.json["status"]
+    assert response.status_code == HTTPStatus.OK, response.status_code
 
     # 6. Get the calculation of these 2 files.
     response = client_app.post(calculation, data=data)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.OK, response.status_code
 
     # 7. Check the catalog include the new calculation.
     check_catalog(client_app, catalog)
 
     # 8. Try to calculate the calculation again.
     response = client_app.post(calc_endpoint, data=data)
-    assert response.json == {"error": str(ResultAlreadyExistsError(files))}
-    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json == {
+        "error": str(ResultAlreadyExistsError(files))
+    }, response.json
+    assert response.status_code == HTTPStatus.CONFLICT, response.status_code
