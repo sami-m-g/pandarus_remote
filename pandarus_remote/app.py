@@ -1,4 +1,5 @@
 """Main entry point for the __pandarus_remote__ service."""
+
 from typing import Any, Dict, Optional
 
 from flask import Flask

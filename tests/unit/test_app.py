@@ -1,4 +1,5 @@
 """Test cases for the __app__ module."""
+
 from pandarus_remote.app import create_app
 from pandarus_remote.version import __version__
 

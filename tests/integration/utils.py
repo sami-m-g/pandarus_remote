@@ -1,4 +1,5 @@
 """Utility functions for the __pandarus_remote__ integration tests."""
+
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path

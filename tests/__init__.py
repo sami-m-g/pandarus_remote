@@ -1,4 +1,5 @@
 """Test suite for the __pandarus_remote__ package."""
+
 from pathlib import Path
 
 DIR_DATA = Path(__file__).parent / "data"

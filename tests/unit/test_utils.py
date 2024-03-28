@@ -1,4 +1,5 @@
 """Test cases for the __utils__ module."""
+
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple

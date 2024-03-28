@@ -1,4 +1,5 @@
 """Routes for the __pandarus_remote__ web service."""
+
 from http import HTTPStatus
 from pathlib import Path
 

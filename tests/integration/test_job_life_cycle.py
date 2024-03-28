@@ -7,6 +7,7 @@
     6. Run a calculation(intersection).
     7. Run a calculation(remaining).
 """
+
 import os
 
 import pytest

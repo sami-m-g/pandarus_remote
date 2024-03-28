@@ -1,4 +1,5 @@
 """Errors for the __pandarus_remote__ web service."""
+
 from typing import List
 
 

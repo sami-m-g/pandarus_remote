@@ -1,4 +1,5 @@
 """Models for the __pandarus_remote__ web service."""
+
 # pylint: disable=too-few-public-methods``
 from peewee import AutoField, CharField, ForeignKeyField, IntegerField, Model, TextField
 

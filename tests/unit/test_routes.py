@@ -1,4 +1,5 @@
 """Test cases for the __routes__ module."""
+
 from http import HTTPStatus
 from typing import Any, Dict
 

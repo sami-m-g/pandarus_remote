@@ -1,4 +1,5 @@
 """Test cases for the __RedisHelper__ class."""
+
 import pytest
 
 from pandarus_remote.errors import JobNotFoundError
