@@ -49,7 +49,7 @@ jobs:
           environment-file: .github/python_test_env.yml
 
       - name: Install package
-        run: pip install .[test]
+        run: pip install .[testing]
 
       - name: Run unit tests
         run: pytest tests/unit
