@@ -2,7 +2,7 @@
 
 ### 2.0.0 (2023-12-24)
 
-- Upgrade to python 3.8+
+- Upgrade to python 3.9+
 - Switch to pandarus v2.0.0
 - Refactor pandarus_remote
 - Added CI/CD
