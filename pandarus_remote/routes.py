@@ -99,7 +99,7 @@ def upload() -> Response:
             file_hash=request.form["sha256"],
             layer=request.form.get("layer", None),
             field=request.form.get("field", None),
-            band=request.form.get("band", None),
+            band=request.form.get("band", 1),
         )
         DatabaseHelper().add_uploaded_file(file)
         return {"file_name": file.name, "file_sha256": file.sha256}, HTTPStatus.OK
