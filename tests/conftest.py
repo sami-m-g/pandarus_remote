@@ -60,9 +60,7 @@ def cleanup_databse() -> None:
 
 
 @pytest.fixture
-def database_helper() -> (
-    Callable[[bool, bool, bool, bool], Generator[DatabaseHelper, None, None]]
-):
+def database_helper() -> Generator[DatabaseHelper, None, None]:
     """Mock a temporary in-memory database and return a DatabaseHelper.
     If insert_files is True, insert two files. If insert_intersections is True,
     insert two intersections. If insert_raster_stats is True, insert two
