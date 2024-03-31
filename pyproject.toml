@@ -56,11 +56,13 @@ testing = [
 ]
 dev = [
     "build",
+    "fakeredis",
+    "flask-testing",
     "pre-commit",
     "pylint",
     "pytest",
     "pytest-cov",
-    "pytest-randomly",
+    "pytest-redis",
     "setuptools",
     "sphinx",
     "sphinx-rtd-theme",
