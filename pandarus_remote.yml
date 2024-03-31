@@ -2,7 +2,12 @@ name: pandarus_remote
 channels:
   - conda-forge
 dependencies:
+  - appdirs
+  - fiona
+  - flask
   - gdal
   - geos
-  - fiona
+  - peewee
+  - redis
   - redis-server
+  - rq
