@@ -9,5 +9,4 @@ dependencies:
   - geos
   - peewee
   - redis
-  - redis-server
   - rq
