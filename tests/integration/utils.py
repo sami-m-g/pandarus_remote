@@ -3,14 +3,30 @@
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
 from rq import SimpleWorker
+from werkzeug.test import TestResponse
 
 from pandarus_remote.errors import NoEntryFoundError, ResultAlreadyExistsError
 from pandarus_remote.helpers import RedisHelper
+
+
+def assert_response(
+    response: TestResponse,
+    status_code: int,
+    json: Any = None,
+    json_key: str = None,
+) -> None:
+    """Assert the response status code and json."""
+    if json is not None:
+        if json_key is not None:
+            assert response.json[json_key] == json, response.json
+        else:
+            assert response.json == json, response.json
+    assert response.status_code == status_code, (response.status_code, response.json)
 
 
 def check_catalog(
@@ -19,8 +35,7 @@ def check_catalog(
 ) -> None:
     """Check the catalog against a reference."""
     response = client_app.get("/catalog")
-    assert response.json == catalog, response.json
-    assert response.status_code == HTTPStatus.OK, response.status_code
+    assert_response(response, HTTPStatus.OK, catalog)
 
 
 def upload_file(
@@ -45,8 +60,7 @@ def upload_file(
             "field": "name",
         },
     )
-    assert response.json["file_sha256"] == file_sha256
-    assert response.status_code == HTTPStatus.OK
+    assert_response(response, HTTPStatus.OK, file_sha256, "file_sha256")
 
     # 2. Check the catalog includes the new file.
     file_name = response.json["file_name"]
@@ -84,23 +98,22 @@ def run_calculation(
 
     # 1. Get the non-existing calculation of 2 files.
     response = client_app.post(calculation, data=data)
-    assert response.json == {"error": str(NoEntryFoundError(files))}, response.json
-    assert response.status_code == HTTPStatus.NOT_FOUND, response.status_code
+    expected_json = {"error": str(NoEntryFoundError(files))}
+    assert_response(response, HTTPStatus.NOT_FOUND, expected_json)
 
     # 2. Create a job to calculate the calculation.
     response = client_app.post(calc_endpoint, data=data)
-    assert response.status_code == HTTPStatus.ACCEPTED, response.status_code
+    assert_response(response, HTTPStatus.ACCEPTED)
 
     # 3. Check the job status is running.
     job_id = response.data.decode().split("/")[-1]
     response = client_app.get(f"/status/{job_id}")
-    assert response.json["status"] == "queued", response.json["status"]
-    assert response.status_code == HTTPStatus.OK, response.status_code
+    assert_response(response, HTTPStatus.OK, "queued", "status")
 
     # 4. Try to calculate the calculation again.
     response = client_app.post(calc_endpoint, data=data)
     new_job_id = response.data.decode().split("/")[-1]
-    assert response.status_code == HTTPStatus.ACCEPTED, response.status_code
+    assert_response(response, HTTPStatus.ACCEPTED)
     assert new_job_id == job_id, new_job_id
 
     # 5. Check the job status is finished.
@@ -109,20 +122,16 @@ def run_calculation(
         queues=[RedisHelper().queue],
     ).work(burst=True)
     response = client_app.get(f"/status/{job_id}")
-    # Doesn't work on GitHub Actions.
-    # assert response.json["status"] == "finished", response.json["status"]
-    assert response.status_code == HTTPStatus.OK, response.status_code
+    assert_response(response, HTTPStatus.OK, "finished", "status")
 
     # 6. Get the calculation of these 2 files.
     response = client_app.post(calculation, data=data)
-    assert response.status_code == HTTPStatus.OK, response.status_code
+    assert_response(response, HTTPStatus.OK)
 
     # 7. Check the catalog include the new calculation.
     check_catalog(client_app, catalog)
 
     # 8. Try to calculate the calculation again.
     response = client_app.post(calc_endpoint, data=data)
-    assert response.json == {
-        "error": str(ResultAlreadyExistsError(files))
-    }, response.json
-    assert response.status_code == HTTPStatus.CONFLICT, response.status_code
+    expected_json = {"error": str(ResultAlreadyExistsError(files))}
+    assert_response(response, HTTPStatus.CONFLICT, expected_json)
