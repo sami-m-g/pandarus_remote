@@ -83,7 +83,7 @@ norecursedirs = [
     "build",
     ".tox"
 ]
-testpaths = ["tests/*.py"]
+testpaths = ["tests/unit/*.py", "tests/integration/*.py"]
 
 [tool.flake8]
 # Some sane defaults for the code style checker flake8
