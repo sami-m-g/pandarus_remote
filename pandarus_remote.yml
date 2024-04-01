@@ -5,7 +5,10 @@ dependencies:
   - appdirs
   - fiona
   - flask
+  - gunicorn
   - peewee
   - pip
   - redis
   - rq
+  - pip:
+    - pandarus==2.0.1.dev0
