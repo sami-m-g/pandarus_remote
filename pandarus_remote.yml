@@ -6,5 +6,6 @@ dependencies:
   - fiona
   - flask
   - peewee
+  - pip
   - redis
   - rq
