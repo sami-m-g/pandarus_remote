@@ -1,6 +1,7 @@
 """Test suite for the __pandarus_remote__ package."""
 
 import shutil
+import tempfile
 from functools import wraps
 from io import BytesIO
 from pathlib import Path
@@ -16,6 +17,15 @@ from werkzeug.datastructures import FileStorage
 from pandarus_remote.app import create_app
 from pandarus_remote.helpers import DatabaseHelper, IOHelper, RedisHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
+
+
+def pytest_configure(config) -> None:
+    """Configure pytest:
+    - Set the base temp directory to the system temp directory.
+    """
+    base_temp = Path(tempfile.gettempdir()) / "pandarus_remote"
+    base_temp.mkdir(exist_ok=True)
+    config.option.redis_datadir = base_temp
 
 
 @pytest.fixture
