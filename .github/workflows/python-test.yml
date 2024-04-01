@@ -48,6 +48,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: pandarus_remote.yml
 
+      - name: Install Redis
+        if : runner.os == 'Windows'
+        run: choco install redis-64 -y
+
       - name: Install package
         run: pip install .[testing]
 
