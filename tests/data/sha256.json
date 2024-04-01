@@ -1,0 +1,16 @@
+{
+    "files": [
+        {
+            "file_name": "raster.tif",
+            "file_sha256": "32ec9dfdac57eb8ce87b865e80cb7cf41fa800ff6333a2fc7146d1336f6fe97f"
+        },
+        {
+            "file_name": "vector1.geojson",
+            "file_sha256": "dc5ab6a209c00f92988a9fda7467463ed38a06447ae4dbd4bb234dab2d3b0e62"
+        },
+        {
+            "file_name": "vector2.geojson",
+            "file_sha256": "0372ffc5996dbeaf5617d8c521d8b302b69aebb92359c9b1d451c229b3b48a5d"
+        }
+    ]
+}
