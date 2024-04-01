@@ -78,6 +78,7 @@ version = {attr = "pandarus_remote.version.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "--cov pandarus_remote --cov-report term-missing --verbose"
+redis_port = 6379
 norecursedirs = [
     "dist",
     "build",
