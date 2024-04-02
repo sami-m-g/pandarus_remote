@@ -50,7 +50,7 @@ jobs:
 
       - name: Install Redis
         if : runner.os == 'Windows'
-        run: choco install redis-64 -y
+        run: choco install redis -y
 
       - name: Install package
         run: pip install .[testing]
