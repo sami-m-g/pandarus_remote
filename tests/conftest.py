@@ -10,14 +10,11 @@ import pytest
 from fakeredis import FakeStrictRedis
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
-from pytest_redis import factories
 from werkzeug.datastructures import FileStorage
 
 from pandarus_remote.app import create_app
 from pandarus_remote.helpers import DatabaseHelper, IOHelper, RedisHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
-
-redis_external = factories.redisdb("redis_nooproc")
 
 
 @pytest.fixture
@@ -160,17 +157,17 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
 
 
 @pytest.fixture
-def client(
-    redis_external,  # pylint: disable=redefined-outer-name
-) -> Generator[FlaskClient, None, None]:
+def client() -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
     IOHelper("test_pandarus_remote", "test_pandarus_remote")
     DatabaseHelper(":memory:")
-    RedisHelper(redis_connection=redis_external)
+    RedisHelper(FakeStrictRedis())
     app = create_app()
     with app.test_client() as test_client:
         app.testing = True
         yield test_client
+    RedisHelper().queue.connection.flushall()
+    cleanup_databse()
 
 
 @pytest.fixture

@@ -52,7 +52,6 @@ testing = [
     "pytest",
     "pytest-cov",
     "python-coveralls",
-    "pytest-redis",
 ]
 dev = [
     "build",
@@ -62,7 +61,6 @@ dev = [
     "pylint",
     "pytest",
     "pytest-cov",
-    "pytest-redis",
     "setuptools",
     "sphinx",
     "sphinx-rtd-theme",
