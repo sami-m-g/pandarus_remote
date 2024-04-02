@@ -19,7 +19,7 @@ def create_app(configs: Optional[Dict[str, Any]] = None) -> Flask:
     pr_app.register_blueprint(routes_blueprint)
     pr_app.config.update(configs)
     pr_app.logger.info(
-        "Starting %s service version %s using pandaris versions %s.",
+        "Starting %s service version %s using pandarus version %s.",
         pr_app.name,
         __version__,
         pandarus_version,
