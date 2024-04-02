@@ -1,6 +1,5 @@
 """Test suite for the __pandarus_remote__ package."""
 
-import shutil
 from functools import wraps
 from io import BytesIO
 from pathlib import Path
@@ -172,8 +171,6 @@ def client(
     with app.test_client() as test_client:
         app.testing = True
         yield test_client
-    shutil.rmtree(IOHelper().data_dir)
-    shutil.rmtree(IOHelper().logs_dir)
 
 
 @pytest.fixture
