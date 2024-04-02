@@ -366,7 +366,9 @@ class RedisHelper:
         existing_job_id = self.queue.connection.hget(self.job_ids_set_name, identifier)
 
         if existing_job_id:
-            return self.queue.fetch_job(existing_job_id.decode("utf-8"))
+            job = self.queue.fetch_job(existing_job_id.decode("utf-8"))
+            if job.get_status() != "failed":
+                return job
         job = self.queue.enqueue(func, *args, **kwargs)
         self.queue.connection.hset(self.job_ids_set_name, identifier, job.id)
         return job
