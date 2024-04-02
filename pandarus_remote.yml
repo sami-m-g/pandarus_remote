@@ -5,7 +5,6 @@ dependencies:
   - appdirs
   - fiona
   - flask
-  - gunicorn
   - peewee
   - pip
   - redis
