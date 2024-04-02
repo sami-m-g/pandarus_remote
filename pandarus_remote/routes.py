@@ -98,7 +98,7 @@ def upload() -> Response:
             name=request.form["name"],
             file_hash=request.form["sha256"],
             layer=request.form.get("layer", None),
-            field=request.form.get("field", None),
+            field=request.form.get("field", "name"),
             band=request.form.get("band", 1),
         )
         DatabaseHelper().add_uploaded_file(file)
