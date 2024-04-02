@@ -15,6 +15,7 @@ def create_app(configs: Optional[Dict[str, Any]] = None) -> Flask:
         configs = {"MAX_CONTENT_LENGTH": 250 * 1024 * 1024}  # pragma: no cover
 
     pr_app = Flask("pandarus_remote")
+    pr_app.logger.setLevel("DEBUG")
     pr_app.register_blueprint(routes_blueprint)
     pr_app.config.update(configs)
     pr_app.logger.info(
