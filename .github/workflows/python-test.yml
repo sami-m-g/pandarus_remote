@@ -48,9 +48,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: .github/pandarus_remote.yml
 
-      - name: Install and Redis
+      - name: Install Redis if Windows
         if : runner.os == 'Windows'
-        run: choco install redis -y && redis-server
+        run: choco install redis -y
+
+      - name: Run Redis
+        run: redis-server --daemonize yes
 
       - name: Install package
         run: pip install .[testing]
