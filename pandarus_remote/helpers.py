@@ -163,6 +163,11 @@ class DatabaseHelper:
             self._database.create_tables([File, Intersection, RasterStats, Remaining])
 
     @property
+    def atomic(self) -> Any:
+        """Return the atomic context manager."""
+        return self._database.atomic()
+
+    @property
     def files(self) -> List[Tuple[str, str, str]]:
         """Return a list of files."""
         return [
@@ -434,12 +439,13 @@ class TaskHelper:
             log_dir=IOHelper().logs_dir,
         )
 
-        Intersection(
-            first_file=file1,
-            second_file=file2,
-            data_file_path=data,
-            vector_file_path=vector_path,
-        ).save()
+        with DatabaseHelper().atomic:
+            Intersection(
+                first_file=file1,
+                second_file=file2,
+                data_file_path=data,
+                vector_file_path=vector_path,
+            ).save()
         # Save intersection data files for new spatial scale
         with fiona.open(vector_path) as src:
             geom_type = src.meta["schema"]["geometry"]
@@ -459,18 +465,19 @@ class TaskHelper:
             data,
             IOHelper().intersections_dir,
         )
-        Intersection(
-            first_file=intersection_file,
-            second_file=file1,
-            data_file_path=intersect_file1_path,
-            vector_file_path=vector_path,
-        ).save()
-        Intersection(
-            first_file=intersection_file,
-            second_file=file2,
-            data_file_path=intersect_file2_path,
-            vector_file_path=vector_path,
-        ).save()
+        with DatabaseHelper().atomic:
+            Intersection(
+                first_file=intersection_file,
+                second_file=file1,
+                data_file_path=intersect_file1_path,
+                vector_file_path=vector_path,
+            ).save()
+            Intersection(
+                first_file=intersection_file,
+                second_file=file2,
+                data_file_path=intersect_file2_path,
+                vector_file_path=vector_path,
+            ).save()
 
     @loggable
     def raster_stats_task(self, vector: File, raster: File, raster_band: int) -> None:
@@ -484,11 +491,12 @@ class TaskHelper:
             output_file_path=output_file_path,
             band=raster_band,
         )
-        RasterStats(
-            vector_file=vector,
-            raster_file=raster,
-            output_file_path=raster_stats_path,
-        ).save()
+        with DatabaseHelper().atomic:
+            RasterStats(
+                vector_file=vector,
+                raster_file=raster,
+                output_file_path=raster_stats_path,
+            ).save()
 
     @loggable
     def remaining_task(self, intersection_id: int) -> None:
@@ -501,4 +509,5 @@ class TaskHelper:
             intersection.vector_file_path,
             out_dir=IOHelper().remaining_dir,
         )
-        Remaining(intersection=intersection, data_file_path=data_file_path).save()
+        with DatabaseHelper().atomic:
+            Remaining(intersection=intersection, data_file_path=data_file_path).save()
