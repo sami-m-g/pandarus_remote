@@ -8,10 +8,18 @@ from typing import Any, Dict, List, Tuple
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
 from rq import SimpleWorker
+from rq.timeouts import TimerDeathPenalty
 from werkzeug.test import TestResponse
 
 from pandarus_remote.errors import NoEntryFoundError, ResultAlreadyExistsError
 from pandarus_remote.helpers import RedisHelper
+
+
+# pylint: disable=too-few-public-methods
+class WindowsSimpleWorker(SimpleWorker):
+    """SimpleWorker with a death penalty for Windows."""
+
+    death_penalty_class = TimerDeathPenalty
 
 
 def assert_response(
@@ -117,7 +125,7 @@ def run_calculation(
     assert new_job_id == job_id, new_job_id
 
     # 5. Check the job status is finished.
-    SimpleWorker(
+    WindowsSimpleWorker(
         connection=RedisHelper().queue.connection,
         queues=[RedisHelper().queue],
     ).work(burst=True)

@@ -1,7 +1,6 @@
 """Test suite for the __pandarus_remote__ package."""
 
 import shutil
-import tempfile
 from functools import wraps
 from io import BytesIO
 from pathlib import Path
@@ -12,20 +11,14 @@ import pytest
 from fakeredis import FakeStrictRedis
 from flask.testing import FlaskClient
 from pandarus.utils.io import sha256_file
+from pytest_redis import factories
 from werkzeug.datastructures import FileStorage
 
 from pandarus_remote.app import create_app
 from pandarus_remote.helpers import DatabaseHelper, IOHelper, RedisHelper
 from pandarus_remote.models import File, Intersection, RasterStats, Remaining
 
-
-def pytest_configure(config) -> None:
-    """Configure pytest:
-    - Set the base temp directory to the system temp directory.
-    """
-    base_temp = Path(tempfile.gettempdir()) / "pandarus_remote"
-    base_temp.mkdir(exist_ok=True)
-    config.option.redis_datadir = base_temp
+redis_external = factories.redisdb("redis_nooproc")
 
 
 @pytest.fixture
@@ -168,11 +161,13 @@ def redis_helper() -> Generator[RedisHelper, None, None]:
 
 
 @pytest.fixture
-def client(redisdb) -> Generator[FlaskClient, None, None]:
+def client(
+    redis_external,  # pylint: disable=redefined-outer-name
+) -> Generator[FlaskClient, None, None]:
     """Mock the FlaskClient."""
     IOHelper("test_pandarus_remote", "test_pandarus_remote")
     DatabaseHelper(":memory:")
-    RedisHelper(redis_connection=redisdb)
+    RedisHelper(redis_connection=redis_external)
     app = create_app()
     with app.test_client() as test_client:
         app.testing = True
