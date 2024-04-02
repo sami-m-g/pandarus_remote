@@ -1,0 +1,51 @@
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+version: "3.8"
+services:
+  redis:
+    image: redislabs/redismod
+    ports:
+      - 6379:6379
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+  rq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    entrypoint: scripts/rq_entry_point.sh
+    healthcheck:
+      test: ["CMD", "rq", "info", "-u", "redis://redis:6379"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stop_signal: SIGINT
+    ports:
+      - 5000:5000
+    depends_on:
+      redis:
+        condition: service_healthy
+      rq:
+        condition: service_healthy
+    entrypoint: scripts/web_entry_point.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+      start_period: 5s
